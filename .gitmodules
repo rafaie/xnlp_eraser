@@ -1,0 +1,3 @@
+[submodule "eraserbenchmark"]
+	path = eraserbenchmark
+	url = https://github.com/rafaie/eraserbenchmark
