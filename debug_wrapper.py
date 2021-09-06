@@ -6,7 +6,24 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 from allennlp.commands import main
 
-config_file = "conf/baseline_linear.jsonnet"
+config_file = "experiment_1/conf/baseline_linear.jsonnet"
+model_name = 'bert-base-uncased'
+train_data_path = "./data/esnli/val.jsonl"
+validation_data_path ="./data/esnli/val.jsonl"
+test_data_path = "./data/esnli/test.jsonl"
+labels = ['neutral', 'entailment', 'contradiction']
+labels_str = ','.join(labels)
+seed_number = 0
+cuda_device = 0
+
+os.environ["MODEL_NAME"] = model_name
+os.environ["SEED_NUMBER"] = str(seed_number)
+os.environ["TRAIN_DATA_PATH"] = validation_data_path
+os.environ["VALIDATION_DATA_PATH"] = validation_data_path
+os.environ["TEST_DATA_PATH"] = test_data_path
+os.environ["LABELS"] = labels_str
+os.environ["CUDA_DEVICE"] = str(cuda_device)
+
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer": {"cuda_device": -1}})
@@ -21,7 +38,7 @@ serialization_dir = "./debugger_train"
 shutil.rmtree(serialization_dir, ignore_errors=True)
 
 # Assemble the command into sys.argv
-sys.argv = [
+run_training = [
     "allennlp",  # command name, not used by main
     "train",
     config_file,
@@ -29,5 +46,8 @@ sys.argv = [
     "--include-package", "experiment_1",
     "-o", overrides,
 ]
+
+# sys.argv = export_cmd + ["&&"] + run_training
+sys.argv =  run_training
 
 main()
