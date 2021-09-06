@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 @DatasetReader.register('single_doc_reader')
 class SingleDocReader(DatasetReader):
     def __init__(self,
-                 ds_name: str,
                  labels: List[str],
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -36,17 +35,18 @@ class SingleDocReader(DatasetReader):
         super().__init__(**kwargs)
         self.tokenizer = tokenizer
         self.token_indexers = token_indexers
-        self.ds_name = ds_name
         self.max_tokens = max_tokens
         self.namespace = namespace
         self.docs = None
         self.evidences_lbl = evidences_lbl
         self.non_evidences_lbl = non_evidences_lbl
         self.labels = labels
+        if len(labels) > 10:
+            self.labels = (''.join(self.labels)).split(',')
         self.lbl_dict = {}
 
         c = 0
-        for l in labels:
+        for l in self.labels:
             self.lbl_dict[l] = c
             c += 1
 
