@@ -93,7 +93,7 @@ class SingleDocReader(DatasetReader):
                 for of in range(offsets[i][0], offsets[i][1] + 1):
                     rat[of] = self.evidences_lbl
 
-        return tokens, rat
+        return tokens, rat, offsets
 
     def text_to_instance(self, documents: Dict,
                          annotation_id=None, label=None,
@@ -111,6 +111,8 @@ class SingleDocReader(DatasetReader):
         if evidences is not None and len(evidences) > 0:
             prem_evidences = []
             hypo_evidences = []
+            hypo_offsets = []
+            prem_evidences = []
 
             cnt = 0
             for e in evidences:
@@ -130,9 +132,9 @@ class SingleDocReader(DatasetReader):
                         doc2 = documents[k]
                         cnt += 1
 
-            hypo_tokens, hypo_evidences = self.text_to_tokens_plus_evidences_lbl(
+            hypo_tokens, hypo_evidences, hypo_offsets = self.text_to_tokens_plus_evidences_lbl(
                 doc1, hypo_evidences)
-            prem_tokens, prem_evidences = self.text_to_tokens_plus_evidences_lbl(
+            prem_tokens, prem_evidences, prem_offsets = self.text_to_tokens_plus_evidences_lbl(
                 doc2, prem_evidences)
 
             tokens = prem_tokens[:-1] + \
@@ -151,7 +153,9 @@ class SingleDocReader(DatasetReader):
             fields['meta'] = MetadataField({
                 'annotation_id': annotation_id,
                 'target_label': label,
-                'evidence_cnt': evidence_cnt
+                'evidence_cnt': evidence_cnt,
+                'hypo_offsets': hypo_offsets,
+                'prem_offsets': prem_offsets
             })
 
         fields['sent_query'] = TextField(
