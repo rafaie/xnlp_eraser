@@ -24,7 +24,6 @@ os.environ["VALIDATION_DATA_PATH"] = validation_data_path
 os.environ["TEST_DATA_PATH"] = test_data_path
 os.environ["LABELS"] = labels_str
 os.environ["CUDA_DEVICE"] = str(cuda_device)
-os.environ["CUDA_DEVICE"] = str(cuda_device)
 os.environ["SERIALIZATION_DIR"] = str(serialization_dir)
 
 
