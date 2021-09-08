@@ -111,31 +111,35 @@ class SingleDocReader(DatasetReader):
         if evidences is not None and len(evidences) > 0:
             prem_evidences = []
             hypo_evidences = []
-            hypo_offsets = []
-            prem_evidences = []
-
+            offsets = []
+            doc_ids=[]
             cnt = 0
+
             for e in evidences:
                 if cnt == 2:
                     break
                 for d in e:
                     if d.docid == list(documents.keys())[0]:
                         k = list(documents.keys())[0]
+                        doc_ids.append(k)
                         hypo_evidences = evidences_map[k]
                         evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
                         doc1 = documents[k]
                         cnt += 1
                     elif d.docid == list(documents.keys())[1]:
                         k = list(documents.keys())[1]
+                        doc_ids.append(k)
                         prem_evidences = evidences_map[k]
                         evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
                         doc2 = documents[k]
                         cnt += 1
 
-            hypo_tokens, hypo_evidences, hypo_offsets = self.text_to_tokens_plus_evidences_lbl(
+            hypo_tokens, hypo_evidences, offsets1 = self.text_to_tokens_plus_evidences_lbl(
                 doc1, hypo_evidences)
-            prem_tokens, prem_evidences, prem_offsets = self.text_to_tokens_plus_evidences_lbl(
+            prem_tokens, prem_evidences, offsets2 = self.text_to_tokens_plus_evidences_lbl(
                 doc2, prem_evidences)
+            
+            offsets = [offsets1, offsets2]
 
             tokens = prem_tokens[:-1] + \
                 self.tokenizer.sequence_pair_mid_tokens[:1] + \
@@ -154,8 +158,9 @@ class SingleDocReader(DatasetReader):
                 'annotation_id': annotation_id,
                 'target_label': label,
                 'evidence_cnt': evidence_cnt,
-                'hypo_offsets': hypo_offsets,
-                'prem_offsets': prem_offsets
+                'offsets': offsets,
+                'labels':self.labels,
+                'doc_ids': doc_ids
             })
 
         fields['sent_query'] = TextField(
