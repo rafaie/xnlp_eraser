@@ -47,7 +47,7 @@ local SERIALIZATION_DIR = std.extVar('SERIALIZATION_DIR');
     trainer: {
         num_epochs: 20,
         patience: 5,
-        cuda_device: CUDA_DEVICE,
+        cuda_device: std.parseInt(CUDA_DEVICE),
         grad_clipping: 5.0,
         grad_norm: 1.0,
         validation_metric: "-loss",
