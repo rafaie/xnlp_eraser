@@ -85,16 +85,16 @@ class FineTuneBaseline(Model):
                     rat.append(torch.round(t))
 
                 ev_st = -1
-                for i, r in enumerate(rat):
+                for iii, r in enumerate(rat):
                     if r == 1:
                         if ev_st == -1:
-                            ev_st = i
+                            ev_st = iii
                     else:
                         if ev_st != -1:
-                            h.append({"start_token": ev_st, "end_token": i})
+                            h.append({"start_token": ev_st, "end_token": iii})
                             ev_st = -1
                 if ev_st != -1:
-                    h.append({"start_token": ev_st, "end_token": i})
+                    h.append({"start_token": ev_st, "end_token": iii})
 
                 st = i + 1
                 l2.append(d)
