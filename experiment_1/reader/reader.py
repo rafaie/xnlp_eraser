@@ -112,27 +112,42 @@ class SingleDocReader(DatasetReader):
             prem_evidences = []
             hypo_evidences = []
             offsets = []
-            doc_ids=[]
+            doc_ids=['']
             cnt = 0
 
-            for e in evidences:
-                if cnt == 2:
-                    break
-                for d in e:
-                    if d.docid == list(documents.keys())[0]:
-                        k = list(documents.keys())[0]
+            # for e in evidences:
+            #     if cnt == 2:
+            #         break
+            #     for d in e:
+            #         if d.docid == list(documents.keys())[0]:
+            #             k = list(documents.keys())[0]
+            #             doc_ids.append(k)
+            #             hypo_evidences = evidences_map[k]
+            #             evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
+            #             doc1 = documents[k]
+            #             cnt += 1
+            #         elif d.docid == list(documents.keys())[1]:
+            #             k = list(documents.keys())[1]
+            #             doc_ids.append(k)
+            #             prem_evidences = evidences_map[k]
+            #             evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
+            #             doc2 = documents[k]
+            #             cnt += 1
+
+            for k in evidences_map:
+                if k == list(documents.keys())[0]:
+                    doc_ids[0] = k
+                    hypo_evidences = evidences_map[k]
+                    evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
+                    doc1 = documents[k]
+                elif k == list(documents.keys())[1]:
+                    if len(doc_ids) == 2:
+                        doc_ids[1] = k
+                    else:
                         doc_ids.append(k)
-                        hypo_evidences = evidences_map[k]
-                        evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
-                        doc1 = documents[k]
-                        cnt += 1
-                    elif d.docid == list(documents.keys())[1]:
-                        k = list(documents.keys())[1]
-                        doc_ids.append(k)
-                        prem_evidences = evidences_map[k]
-                        evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
-                        doc2 = documents[k]
-                        cnt += 1
+                    prem_evidences = evidences_map[k]
+                    evidence_cnt += sum([e[1] - e[0] for e in evidences_map[k]])
+                    doc2 = documents[k]
 
             hypo_tokens, hypo_evidences, offsets1 = self.text_to_tokens_plus_evidences_lbl(
                 doc1, hypo_evidences)
