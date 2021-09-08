@@ -5,6 +5,7 @@ local VALIDATION_DATA_PATH = std.extVar('VALIDATION_DATA_PATH');
 local TEST_DATA_PATH = std.extVar('TEST_DATA_PATH');
 local LABELS = std.extVar('LABELS');
 local CUDA_DEVICE = std.extVar('CUDA_DEVICE');
+local SERIALIZATION_DIR = std.extVar('SERIALIZATION_DIR');
 
 {
     random_seed: SEED_NUMBER,
@@ -50,6 +51,10 @@ local CUDA_DEVICE = std.extVar('CUDA_DEVICE');
         grad_clipping: 5.0,
         grad_norm: 1.0,
         validation_metric: "-loss",
+        checkpointer: {
+            serialization_dir:SERIALIZATION_DIR,
+            num_serialized_models_to_keep: 1
+        },
         optimizer: {
             type: "adam",
             lr: 1e-5
