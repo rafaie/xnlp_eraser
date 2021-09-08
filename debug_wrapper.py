@@ -15,6 +15,7 @@ labels = ['neutral', 'entailment', 'contradiction']
 labels_str = ','.join(labels)
 seed_number = 0
 cuda_device = 0
+serialization_dir = "./debugger_train"
 
 os.environ["MODEL_NAME"] = model_name
 os.environ["SEED_NUMBER"] = str(seed_number)
@@ -23,12 +24,13 @@ os.environ["VALIDATION_DATA_PATH"] = validation_data_path
 os.environ["TEST_DATA_PATH"] = test_data_path
 os.environ["LABELS"] = labels_str
 os.environ["CUDA_DEVICE"] = str(cuda_device)
+os.environ["CUDA_DEVICE"] = str(cuda_device)
+os.environ["SERIALIZATION_DIR"] = str(serialization_dir)
+
 
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer": {"cuda_device": -1}})
-
-serialization_dir = "./debugger_train"
 
 # Training will fail if the serialization directory already
 # has stuff in it. If you are running the same training loop
