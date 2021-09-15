@@ -122,14 +122,21 @@ class FineTuneBaseline(Model):
         logits_rational = logits_rational[:, :num_tokens_per_sent]
 
         labels = meta[0]['labels']
+        classification_scores = []
+        for l in logits:
+            c = {}
+            for i, _ in enumerate(labels):
+                c[labels[i]] = l[i]
+            classification_scores.append(c)
+
         output_dict = {
             "annotation_id":[m['annotation_id'] for m in meta] ,
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
-            "classification_scores":logits,
+            "classification_scores":classification_scores,
             "logits_rational": logits_rational,
             "evidences_val": evidences,
-            "evidences":self.get_evidences_dict(evidences, meta),
-            "meta": meta
+            "rationales":self.get_evidences_dict(evidences, meta),
+            # "meta": meta
         }
 
         if label_target is not None:
