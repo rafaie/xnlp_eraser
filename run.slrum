@@ -1,0 +1,12 @@
+#!/bin/bash
+#SBATCH --time=33:15:00          # Run time in hh:mm:ss
+#SBATCH --job-name=XNLP
+#SBATCH --error=logs/job.%J.err
+#SBATCH --output=logs/job.%J.out
+#SBATCH --gres=gpu
+#SBATCH --constraint=gpu_p100
+#SBATCH --partition=scott
+#SBATCH --mem=16gb
+
+module load singularity
+singularity exec docker://rafaie/allennlp:2.3.1 $1 
