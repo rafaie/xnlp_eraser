@@ -1,4 +1,5 @@
 local MODEL_NAME = std.extVar('MODEL_NAME');
+local MODEL_TYPE = std.extVar('MODEL_TYPE');
 local SEED_NUMBER = std.extVar('SEED_NUMBER');
 local TRAIN_DATA_PATH = std.extVar('TRAIN_DATA_PATH');
 local VALIDATION_DATA_PATH = std.extVar('VALIDATION_DATA_PATH');
@@ -34,7 +35,7 @@ local SERIALIZATION_DIR = std.extVar('SERIALIZATION_DIR');
     test_data_path: TEST_DATA_PATH,
     evaluate_on_test: true,
     model: {
-        type: "fine_tune_baseline",
+        type: MODEL_TYPE,
         embedder: {
             token_embedders: {
                 bert: {

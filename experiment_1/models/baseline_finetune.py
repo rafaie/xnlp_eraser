@@ -20,6 +20,7 @@ ML_BASELINE = 'baseline'
 ML_RATIONAL_TO_PRED = 'rational_to_pred'
 ML_RATIONAL_CNT_TO_PRED = 'rational_cnt_to_pred'
 
+
 @Model.register('fine_tune_baseline')
 class FineTuneBaseline(Model):
     def __init__(self,
@@ -28,7 +29,8 @@ class FineTuneBaseline(Model):
                  serialization_dir: Optional[str],
                  regularizer: Optional[RegularizerApplicator] = None,
                  target_class_num: int = 3,
-                 classifier: Union[StackedBidirectionalLstm, FeedForward] = None,
+                 classifier: Union[StackedBidirectionalLstm,
+                                   FeedForward] = None,
                  rational_mclassifier: FeedForward = None,
                  dropout: float = 0.0) -> None:
         super().__init__(vocab, regularizer=regularizer, serialization_dir=serialization_dir)
@@ -69,7 +71,7 @@ class FineTuneBaseline(Model):
         z = torch.ones((t.shape[0], n - t.shape[1]), device=device)
         return torch.cat((t, z), axis=1)
 
-    def get_evidences_dict(self, evidences:Tensor, meta:MetadataField):
+    def get_evidences_dict(self, evidences: Tensor, meta: MetadataField):
         l = []
 
         for i, m in enumerate(meta):
@@ -81,7 +83,8 @@ class FineTuneBaseline(Model):
                 rat = []
                 offset = m['offsets'][ii]
                 for of in offset:
-                    t = torch.sum(evidences[i][of[0] + st: of[1] + st + 1]) / (of[1] - of[0] + 1)
+                    t = torch.sum(
+                        evidences[i][of[0] + st: of[1] + st + 1]) / (of[1] - of[0] + 1)
                     rat.append(torch.round(t))
 
                 ev_st = -1
@@ -100,8 +103,6 @@ class FineTuneBaseline(Model):
                 l2.append(d)
             l.append(l2)
         return l
-
-# {"docid": "1061467336.jpg#3r1e_hypothesis", "hard_rationale_predictions": [{"start_token": 0, "end_token": 1}]}, 
 
     def forward(self, sent_query: TextField, evidences: TextField = None,
                 label_target: LabelField = None,
@@ -130,12 +131,12 @@ class FineTuneBaseline(Model):
             classification_scores.append(c)
 
         output_dict = {
-            "annotation_id":[m['annotation_id'] for m in meta] ,
+            "annotation_id": [m['annotation_id'] for m in meta],
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
-            "classification_scores":classification_scores,
+            "classification_scores": classification_scores,
             "logits_rational": logits_rational,
             "evidences_val": evidences,
-            "rationales":self.get_evidences_dict(evidences, meta),
+            "rationales": self.get_evidences_dict(evidences, meta),
             # "meta": meta
         }
 
@@ -153,3 +154,164 @@ class FineTuneBaseline(Model):
 
         return output_dict
 
+
+@Model.register('fine_tune_baseline_rational_to_pred')
+class FineTuneBaselineRationalToPredict(FineTuneBaseline):
+    def forward(self, sent_query: TextField, evidences: TextField = None,
+                label_target: LabelField = None,
+                meta: MetadataField = None) -> Dict[str, torch.Tensor]:
+        evidences = evidences.double()
+
+        embedded_sent = self.embedder(sent_query)
+        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
+
+        embedded_sent = embedded_sent[:, 0, :]
+        embedded_sent = self.dropout(embedded_sent)
+
+        base_logits_rational = self.rational_mclassifier(
+            embedded_sent).squeeze().view(batch_size, -1)
+        logits_rational = base_logits_rational[:, :num_tokens_per_sent]
+
+        logits = self.classifier(
+            base_logits_rational).squeeze().view(batch_size, -1)
+        probs = F.softmax(logits, dim=1)
+
+        labels = meta[0]['labels']
+        classification_scores = []
+        for l in logits:
+            c = {}
+            for i, _ in enumerate(labels):
+                c[labels[i]] = l[i]
+            classification_scores.append(c)
+
+        output_dict = {
+            "annotation_id": [m['annotation_id'] for m in meta],
+            "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
+            "classification_scores": classification_scores,
+            "logits_rational": logits_rational,
+            "evidences_val": evidences,
+            "rationales": self.get_evidences_dict(evidences, meta),
+            # "meta": meta
+        }
+
+        if label_target is not None:
+            loss1 = self.loss_fn_target(logits, label_target)
+            loss2 = self.loss_fn_rational(logits_rational,
+                                          evidences)
+
+            output_dict['loss'] = loss1 + loss2
+            self.acc(probs, label_target)
+            self.acc_rational(self.complete_tensor(logits_rational),
+                              self.complete_tensor(evidences),
+                              num_tokens_per_sent,
+                              self.gen_mask(evidences))
+
+        return output_dict
+
+
+@Model.register('fine_tune_baseline_rational_cnt_to_pred')
+class FineTuneBaselineRationalToPredict(FineTuneBaseline):
+    def __init__(self, vocab: Vocabulary,
+                 embedder: TextFieldEmbedder,
+                 serialization_dir: Optional[str],
+                 regularizer: Optional[RegularizerApplicator] = None,
+                 target_class_num: int = 3,
+                 classifier: Union[StackedBidirectionalLstm,
+                                   FeedForward] = None,
+                 rational_mclassifier: FeedForward = None,
+                 dropout: float = 0.0,
+                 rational_cnt_reg: FeedForward = None,) -> None:
+        super().__init__(vocab, embedder, serialization_dir, regularizer=regularizer,
+                         target_class_num=target_class_num, classifier=classifier,
+                         rational_mclassifier=rational_mclassifier, dropout=dropout)
+
+        self.embedder = embedder
+        self.classifier = classifier or torch.nn.Linear(
+            embedder.get_output_dim() + 1, target_class_num)
+        self.rational_mclassifier = rational_mclassifier or torch.nn.Linear(
+            embedder.get_output_dim(), embedder.get_output_dim())
+        self.rational_cnt_reg = rational_cnt_reg or torch.nn.Linear(
+            embedder.get_output_dim(), 1)
+        self.dropout = torch.nn.Dropout(dropout)
+
+        self.loss_fn_target = torch.nn.CrossEntropyLoss()
+        self.loss_fn_rational = torch.nn.BCEWithLogitsLoss()
+        self.loss_fn_rational_cnt = torch.nn.MSELoss()
+
+        self.acc = CategoricalAccuracy()
+        self.acc_rational = RationalMetricSingleSent(
+            num_classes=embedder.get_output_dim())
+        self.acc_rational_num = RationalCntMetricSingleSent()
+        self.num_rational_tokens = embedder.get_output_dim()
+
+    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
+        m = self.acc_rational.get_metric(reset)
+        c = self.acc_rational_num.get_metric(reset)
+        return {
+            'accuracy': self.acc.get_metric(reset),
+            'rational_precision': m['precision'],
+            'rational_recall': m['recall'],
+            'rational_fscore': m['fscore'],
+            'rational_cnt_mse': c['mse'],
+        }
+
+    def forward(self, sent_query: TextField, evidences: TextField = None,
+                label_target: LabelField = None,
+                meta: MetadataField = None) -> Dict[str, torch.Tensor]:
+        evidences = evidences.double()
+
+        embedded_sent = self.embedder(sent_query)
+        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
+
+        embedded_sent = embedded_sent[:, 0, :]
+        embedded_sent = self.dropout(embedded_sent)
+
+        base_logits_rational = self.rational_mclassifier(
+            embedded_sent).squeeze().view(batch_size, -1)
+        logits_rational = base_logits_rational[:, :num_tokens_per_sent]
+
+        logits_rational_cnt = self.rational_cnt_reg(embedded_sent).squeeze().view(batch_size, -1)
+
+        tmp_tensor = torch.cat((base_logits_rational, logits_rational_cnt), 1)
+        logits = self.classifier(tmp_tensor).squeeze().view(batch_size, -1)
+        probs = F.softmax(logits, dim=1)
+
+        labels = meta[0]['labels']
+        classification_scores = []
+        for l in logits:
+            c = {}
+            for i, _ in enumerate(labels):
+                c[labels[i]] = l[i]
+            classification_scores.append(c)
+
+        output_dict = {
+            "annotation_id": [m['annotation_id'] for m in meta],
+            "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
+            "classification_scores": classification_scores,
+            "logits_rational": logits_rational,
+            "evidences_val": evidences,
+            "rationales": self.get_evidences_dict(evidences, meta),
+            # "meta": meta
+        }
+
+        if label_target is not None:
+            loss1 = self.loss_fn_target(logits, label_target)
+            loss2 = self.loss_fn_rational(logits_rational,
+                                          evidences)
+            evidence_cnt_target = [[m['evidence_cnt']] for m in meta]
+            device = torch.device(
+                "cuda") if torch.cuda.is_available() else torch.device("cpu")
+            evidence_cnt_target = torch.FloatTensor(
+                evidence_cnt_target).to(device)
+            loss3 = self.loss_fn_rational_cnt(
+                logits_rational_cnt, evidence_cnt_target)
+
+            output_dict['loss'] = loss1 + loss2 + loss3
+            self.acc(probs, label_target)
+            self.acc_rational(self.complete_tensor(logits_rational),
+                              self.complete_tensor(evidences),
+                              num_tokens_per_sent,
+                              self.gen_mask(evidences))
+            self.acc_rational_num(logits_rational_cnt, evidence_cnt_target)
+
+        return output_dict

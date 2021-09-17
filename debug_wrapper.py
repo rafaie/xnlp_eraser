@@ -8,6 +8,7 @@ from allennlp.commands import main
 
 config_file = "experiment_1/conf/baseline_linear.jsonnet"
 model_name = 'bert-base-uncased'
+model_type = 'fine_tune_baseline_rational_cnt_to_pred'
 train_data_path = "./data/esnli/val.jsonl"
 validation_data_path ="./data/esnli/val.jsonl"
 test_data_path = "./data/esnli/test.jsonl"
@@ -18,6 +19,7 @@ cuda_device = 0
 serialization_dir = "./debugger_train"
 
 os.environ["MODEL_NAME"] = model_name
+os.environ["MODEL_TYPE"] = model_type
 os.environ["SEED_NUMBER"] = str(seed_number)
 os.environ["TRAIN_DATA_PATH"] = validation_data_path
 os.environ["VALIDATION_DATA_PATH"] = validation_data_path
