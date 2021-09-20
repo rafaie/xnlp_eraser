@@ -173,6 +173,7 @@ class SingleDocReader(DatasetReader):
                 'annotation_id': annotation_id,
                 'target_label': label,
                 'evidence_cnt': evidence_cnt,
+                'evidences': evidences,
                 'offsets': offsets,
                 'labels':self.labels,
                 'doc_ids': doc_ids

@@ -124,20 +124,17 @@ class FineTuneBaseline(Model):
 
         labels = meta[0]['labels']
         classification_scores = []
-        for l in logits:
+        for l in probs:
             c = {}
             for i, _ in enumerate(labels):
                 c[labels[i]] = l[i]
             classification_scores.append(c)
 
         output_dict = {
+            "rationales": self.get_evidences_dict(logits_rational, meta),
             "annotation_id": [m['annotation_id'] for m in meta],
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
             "classification_scores": classification_scores,
-            "logits_rational": logits_rational,
-            "evidences_val": evidences,
-            "rationales": self.get_evidences_dict(evidences, meta),
-            # "meta": meta
         }
 
         if label_target is not None:
@@ -178,20 +175,17 @@ class FineTuneBaselineRationalToPredict(FineTuneBaseline):
 
         labels = meta[0]['labels']
         classification_scores = []
-        for l in logits:
+        for l in probs:
             c = {}
             for i, _ in enumerate(labels):
                 c[labels[i]] = l[i]
             classification_scores.append(c)
 
         output_dict = {
+            "rationales": self.get_evidences_dict(logits_rational, meta),
             "annotation_id": [m['annotation_id'] for m in meta],
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
             "classification_scores": classification_scores,
-            "logits_rational": logits_rational,
-            "evidences_val": evidences,
-            "rationales": self.get_evidences_dict(evidences, meta),
-            # "meta": meta
         }
 
         if label_target is not None:
@@ -278,21 +272,19 @@ class FineTuneBaselineRationalToPredict(FineTuneBaseline):
 
         labels = meta[0]['labels']
         classification_scores = []
-        for l in logits:
+        for l in probs:
             c = {}
             for i, _ in enumerate(labels):
                 c[labels[i]] = l[i]
             classification_scores.append(c)
 
         output_dict = {
+            "rationales": self.get_evidences_dict(logits_rational, meta),
             "annotation_id": [m['annotation_id'] for m in meta],
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
             "classification_scores": classification_scores,
-            "logits_rational": logits_rational,
-            "evidences_val": evidences,
-            "rationales": self.get_evidences_dict(evidences, meta),
-            # "meta": meta
         }
+
 
         if label_target is not None:
             loss1 = self.loss_fn_target(logits, label_target)
