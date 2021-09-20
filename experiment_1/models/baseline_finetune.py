@@ -121,6 +121,7 @@ class FineTuneBaseline(Model):
         logits_rational = self.rational_mclassifier(
             embedded_sent).squeeze().view(batch_size, -1)
         logits_rational = logits_rational[:, :num_tokens_per_sent]
+        logits_rational = F.softmax(logits_rational, dim=1)
 
         labels = meta[0]['labels']
         classification_scores = []
@@ -135,6 +136,7 @@ class FineTuneBaseline(Model):
             "annotation_id": [m['annotation_id'] for m in meta],
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
             "classification_scores": classification_scores,
+            "rat_val": logits_rational
         }
 
         if label_target is not None:
