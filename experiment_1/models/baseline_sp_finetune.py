@@ -109,16 +109,16 @@ class FineTuneBaseline(Model):
             l.append(l2)
         return l
 
-    def update_logits_rational(self, t: tensor, meta: MetadataField, method=None) -> Tensor:
+    def update_logits_rational(self, t_: tensor, meta: MetadataField, method=None) -> Tensor:
         mid_token_pos = [m['mid_token_pos'] for m in meta]
         token_size = [m['token_size'] for m in meta]
-        t = t.detach()
+        t = t_.detach().cpu()
         for i, r in enumerate(t):
             t[i].apply_(lambda x: x if x > r[mid_token_pos[i]]
                         else r[mid_token_pos[i]])
             t[i] = (t[i] - min(t[i])) / (max(t[i]) - min(t[i]) + 0.00000000001)
             t[i][token_size[i]:] = -1
-        return t
+        return t.to(t_.device)
 
     def forward(self, sent_query: TextField, evidences: TextField = None,
                 label_target: LabelField = None,
@@ -153,7 +153,7 @@ class FineTuneBaseline(Model):
                               self.complete_tensor(evidences),
                               num_tokens_per_sent,
                               self.gen_mask(evidences))
-        else:
+        if True:
             labels = meta[0]['labels']
             classification_scores = []
             for l in probs:
@@ -167,7 +167,7 @@ class FineTuneBaseline(Model):
                 "annotation_id": [m['annotation_id'] for m in meta],
                 "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
                 "classification_scores": classification_scores,
-                "rat_val": logits_rational
+                #"rat_val": logits_rational
             }
 
         return output_dict
@@ -209,7 +209,7 @@ class FineTuneBaselineRationalToPredictSoft(FineTuneBaseline):
                               self.complete_tensor(evidences),
                               num_tokens_per_sent,
                               self.gen_mask(evidences))
-        else:
+        if True:
             labels = meta[0]['labels']
             classification_scores = []
             for l in probs:
@@ -223,7 +223,7 @@ class FineTuneBaselineRationalToPredictSoft(FineTuneBaseline):
                 "annotation_id": [m['annotation_id'] for m in meta],
                 "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
                 "classification_scores": classification_scores,
-                "rat_val": logits_rational
+                #"rat_val": logits_rational
             }
 
         return output_dict
