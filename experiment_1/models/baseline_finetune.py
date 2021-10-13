@@ -170,6 +170,7 @@ class FineTuneBaselineRationalToPredict(FineTuneBaseline):
         base_logits_rational = self.rational_mclassifier(
             embedded_sent).squeeze().view(batch_size, -1)
         logits_rational = base_logits_rational[:, :num_tokens_per_sent]
+        logits_rational = F.softmax(logits_rational, dim=1)
 
         logits = self.classifier(
             base_logits_rational).squeeze().view(batch_size, -1)
@@ -188,6 +189,7 @@ class FineTuneBaselineRationalToPredict(FineTuneBaseline):
             "annotation_id": [m['annotation_id'] for m in meta],
             "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
             "classification_scores": classification_scores,
+            "rat_val": logits_rational
         }
 
         if label_target is not None:
@@ -203,6 +205,60 @@ class FineTuneBaselineRationalToPredict(FineTuneBaseline):
                               self.gen_mask(evidences))
 
         return output_dict
+
+
+@Model.register('fine_tune_baseline_rational_to_pred_soft')
+class FineTuneBaselineRationalToPredictSoft(FineTuneBaseline):
+    def forward(self, sent_query: TextField, evidences: TextField = None,
+                label_target: LabelField = None,
+                meta: MetadataField = None) -> Dict[str, torch.Tensor]:
+        evidences = evidences.double()
+
+        embedded_sent = self.embedder(sent_query)
+        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
+
+        embedded_sent = embedded_sent[:, 0, :]
+        embedded_sent = self.dropout(embedded_sent)
+
+        base_logits_rational = self.rational_mclassifier(
+            embedded_sent).squeeze().view(batch_size, -1)
+        logits_rational = base_logits_rational[:, :num_tokens_per_sent]
+        logits_rational = F.softmax(logits_rational, dim=1)
+
+        logits = self.classifier(
+            base_logits_rational).squeeze().view(batch_size, -1)
+        probs = F.softmax(logits, dim=1)
+
+        labels = meta[0]['labels']
+        classification_scores = []
+        for l in probs:
+            c = {}
+            for i, _ in enumerate(labels):
+                c[labels[i]] = l[i]
+            classification_scores.append(c)
+
+        output_dict = {
+            "rationales": self.get_evidences_dict(logits_rational, meta),
+            "annotation_id": [m['annotation_id'] for m in meta],
+            "classification": [labels[m] for m in torch.argmax(logits, axis=1)],
+            "classification_scores": classification_scores,
+            "rat_val": logits_rational
+        }
+
+        if label_target is not None:
+            loss1 = self.loss_fn_target(logits, label_target)
+            loss2 = self.loss_fn_rational(logits_rational,
+                                          evidences)
+
+            output_dict['loss'] = loss1 + loss2
+            self.acc(probs, label_target)
+            self.acc_rational(self.complete_tensor(logits_rational),
+                              self.complete_tensor(evidences),
+                              num_tokens_per_sent,
+                              self.gen_mask(evidences))
+
+        return output_dict
+
 
 
 @Model.register('fine_tune_baseline_rational_cnt_to_pred')

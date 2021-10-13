@@ -156,17 +156,17 @@ class SingleDocReader(DatasetReader):
             
             offsets = [offsets1, offsets2]
 
-            tokens = prem_tokens[:-1] + \
+            tokens = hypo_tokens[:-1] + \
                 self.tokenizer.sequence_pair_mid_tokens[:1] + \
-                hypo_tokens[1:]
+                prem_tokens[1:]
             evidences_lbl = prem_evidences[:-1] + \
                 [self.non_evidences_lbl] + hypo_evidences[1:]
         else:
             prem_tokens = self.tokenizer.tokenize(documents[0])
             hypo_tokens = self.tokenizer.tokenize(documents[1]) if len(documents) > 1 else self.tokenizer.tokenize('')
-            tokens = prem_tokens[:-1] + \
+            tokens = hypo_tokens[:-1] + \
                 self.tokenizer.self.sequence_pair_mid_tokens() + \
-                hypo_tokens[1:]
+                prem_tokens[1:]
 
         if annotation_id is not None:
             fields['meta'] = MetadataField({
@@ -176,7 +176,9 @@ class SingleDocReader(DatasetReader):
                 'evidences': evidences,
                 'offsets': offsets,
                 'labels':self.labels,
-                'doc_ids': doc_ids
+                'doc_ids': doc_ids,
+                'mid_token_pos': len(hypo_tokens),
+                'token_size': len(tokens)
             })
 
         fields['sent_query'] = TextField(

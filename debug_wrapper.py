@@ -8,9 +8,9 @@ from allennlp.commands import main
 
 config_file = "experiment_1/conf/baseline_linear.jsonnet"
 model_name = 'bert-base-uncased'
-model_type = 'fine_tune_baseline_rational_cnt_to_pred'
+model_type = 'fine_tune_baseline_rational_to_pred_sp'
 train_data_path = "./data/esnli/val.jsonl"
-validation_data_path ="./data/esnli/val.jsonl"
+validation_data_path ="./data/esnli/val2.jsonl"
 test_data_path = "./data/esnli/test.jsonl"
 labels = ['neutral', 'entailment', 'contradiction']
 labels_str = ','.join(labels)
