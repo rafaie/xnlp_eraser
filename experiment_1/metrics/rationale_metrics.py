@@ -17,7 +17,7 @@ class RationalMetricSingleSent(FBetaMultiLabelMeasure):
         average: str = None,
         labels: List[int] = None,
         threshold: float = 0.5,
-        num_classes:int=1000
+        num_classes: int = 1000
     ) -> None:
         super().__init__(beta, average, labels)
         self._threshold = threshold
@@ -33,10 +33,14 @@ class RationalMetricSingleSent(FBetaMultiLabelMeasure):
         mask: Optional[torch.BoolTensor] = None,
     ):
         if self._true_positive_sum is None:
-            self._true_positive_sum = torch.zeros(self.num_classes, device=predictions.device)
-            self._true_sum = torch.zeros(self.num_classes, device=predictions.device)
-            self._pred_sum = torch.zeros(self.num_classes, device=predictions.device)
-            self._total_sum = torch.zeros(self.num_classes, device=predictions.device)
+            self._true_positive_sum = torch.zeros(
+                self.num_classes, device=predictions.device)
+            self._true_sum = torch.zeros(
+                self.num_classes, device=predictions.device)
+            self._pred_sum = torch.zeros(
+                self.num_classes, device=predictions.device)
+            self._total_sum = torch.zeros(
+                self.num_classes, device=predictions.device)
 
         self.max_token_size = max(self.max_token_size, token_size)
         super().__call__(predictions, gold_labels, mask)
@@ -44,16 +48,16 @@ class RationalMetricSingleSent(FBetaMultiLabelMeasure):
     @overrides
     def get_metric(self, reset: bool = False):
         r = super().get_metric(reset)
-        return {
+        m = {
             'precision': np.mean(r['precision'][:self.max_token_size]),
             'recall': np.mean(r['recall'][:self.max_token_size]),
             'fscore': np.mean(r['fscore'][:self.max_token_size]),
         }
 
-    @overrides
-    def reset(self) -> None:
-        super().reset()
-        self.max_token_size = 0
+        if reset is True:
+            self.max_token_size = 0
+
+        return m
 
 
 class RationalCntMetricSingleSent(FBetaMultiLabelMeasure):
@@ -72,15 +76,18 @@ class RationalCntMetricSingleSent(FBetaMultiLabelMeasure):
         logits_rational_cnt: torch.Tensor,
         evidence_cnt_target: torch.Tensor
     ):
-        self.mse_list += ((logits_rational_cnt - evidence_cnt_target) ** 2).detach().tolist()
+        self.mse_list += ((logits_rational_cnt -
+                          evidence_cnt_target) ** 2).detach().tolist()
 
     @overrides
     def get_metric(self, reset: bool = False):
+        mse = {
+            'mse': np.mean(self.mse_list)}
+
         if reset:
             self.reset()
 
-        return {
-            'mse': np.mean(self.mse_list)}
+        return mse
 
     @overrides
     def reset(self) -> None:
