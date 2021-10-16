@@ -8,7 +8,7 @@ from allennlp.commands import main
 
 config_file = "experiment_1/conf/baseline_linear.jsonnet"
 model_name = 'bert-base-uncased'
-model_type = 'fine_tune_baseline_rational_to_pred_sp'
+model_type = 'fine_tune_baseline_sp'
 train_data_path = "./data/esnli/val.jsonl"
 validation_data_path ="./data/esnli/val2.jsonl"
 test_data_path = "./data/esnli/test.jsonl"
@@ -17,6 +17,11 @@ labels_str = ','.join(labels)
 seed_number = 0
 cuda_device = 0
 serialization_dir = "./debugger_train"
+loss_co1 = 1
+loss_co2 = 1
+loss_co3 = 1
+loss_b = 1
+
 
 os.environ["MODEL_NAME"] = model_name
 os.environ["MODEL_TYPE"] = model_type
@@ -27,7 +32,10 @@ os.environ["TEST_DATA_PATH"] = test_data_path
 os.environ["LABELS"] = labels_str
 os.environ["CUDA_DEVICE"] = str(cuda_device)
 os.environ["SERIALIZATION_DIR"] = str(serialization_dir)
-
+os.environ["LOSS_CO1"] = str(loss_co1)
+os.environ["LOSS_CO2"] = str(loss_co2)
+os.environ["LOSS_CO3"] = str(loss_co3)
+os.environ["LOSS_B"] = str(loss_b)
 
 
 # Use overrides to train on CPU.

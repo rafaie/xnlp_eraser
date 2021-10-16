@@ -7,6 +7,10 @@ local TEST_DATA_PATH = std.extVar('TEST_DATA_PATH');
 local LABELS = std.extVar('LABELS');
 local CUDA_DEVICE = std.extVar('CUDA_DEVICE');
 local SERIALIZATION_DIR = std.extVar('SERIALIZATION_DIR');
+local LOSS_CO1 = std.parseInt(std.extVar('LOSS_CO1'));
+local LOSS_CO2 = std.parseInt(std.extVar('LOSS_CO2'));
+local LOSS_CO3 = std.parseInt(std.extVar('LOSS_CO3'));
+local LOSS_B = std.parseInt(std.extVar('LOSS_B'));
 
 {
     random_seed: SEED_NUMBER,
@@ -43,7 +47,11 @@ local SERIALIZATION_DIR = std.extVar('SERIALIZATION_DIR');
                     model_name: MODEL_NAME
                 }
             }
-        }
+        },
+        loss_co1: LOSS_CO1,
+        loss_co2: LOSS_CO2,
+        loss_co3: LOSS_CO3,
+        loss_b: LOSS_B
     },
     trainer: {
         num_epochs: 20,
