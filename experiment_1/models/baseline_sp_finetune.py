@@ -88,16 +88,16 @@ class FineTuneBaseline(Model):
         l = []
 
         for i, m in enumerate(meta):
-            st = 0
             l2 = []
             for ii, k in enumerate(m['doc_ids']):
                 d = {'docid': k, "hard_rationale_predictions": []}
                 h = d["hard_rationale_predictions"]
                 rat = []
                 offset = m['offsets'][ii]
+                mid_token_pos = 0 if ii == 0 else m['mid_token_pos']
                 for of in offset:
-                    t = torch.sum(
-                        evidences[i][of[0] + st: of[1] + st + 1]) / (of[1] - of[0] + 1)
+                    t = torch.max(
+                        evidences[i][of[0] + mid_token_pos: of[1] + mid_token_pos + 1])
                     rat.append(torch.round(t))
 
                 ev_st = -1
@@ -110,9 +110,8 @@ class FineTuneBaseline(Model):
                             h.append({"start_token": ev_st, "end_token": iii})
                             ev_st = -1
                 if ev_st != -1:
-                    h.append({"start_token": ev_st, "end_token": iii})
+                    h.append({"start_token": ev_st, "end_token": iii + 1})
 
-                st = i + 1
                 l2.append(d)
             l.append(l2)
         return l
