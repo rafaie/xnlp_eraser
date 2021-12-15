@@ -41,7 +41,7 @@ class SingleDocReader(DatasetReader):
         self.evidences_lbl = evidences_lbl
         self.non_evidences_lbl = non_evidences_lbl
         self.labels = labels
-        if len(labels) > 10:
+        if len(labels) > 5:
             self.labels = (''.join(self.labels)).split(',')
         self.lbl_dict = {}
 
@@ -101,7 +101,7 @@ class SingleDocReader(DatasetReader):
         fields: Dict[str, Field] = {}
         if label is not None:
             fields['label_target'] = LabelField(
-                self.lbl_dict[label.lower().strip()], skip_indexing=True)
+                self.lbl_dict[label.strip()], skip_indexing=True)
 
         tokens = []
         evidences_lbl = []
