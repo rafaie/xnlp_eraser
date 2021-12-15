@@ -5,6 +5,7 @@ local TRAIN_DATA_PATH = std.extVar('TRAIN_DATA_PATH');
 local VALIDATION_DATA_PATH = std.extVar('VALIDATION_DATA_PATH');
 local TEST_DATA_PATH = std.extVar('TEST_DATA_PATH');
 local LABELS = std.extVar('LABELS');
+local TARGET_CLASS_NUM = std.parseInt(std.extVar('TARGET_CLASS_NUM'));
 local CUDA_DEVICE = std.extVar('CUDA_DEVICE');
 local SERIALIZATION_DIR = std.extVar('SERIALIZATION_DIR');
 local LOSS_CO1 = std.parseInt(std.extVar('LOSS_CO1'));
@@ -48,10 +49,18 @@ local LOSS_B = std.parseInt(std.extVar('LOSS_B'));
                 }
             }
         },
+        encoder:{
+            type: 'feedforward',
+            input_dim: 768,
+            hidden_dims:768,
+            num_layers: 2,
+            activations:'relu'
+        },
         loss_co1: LOSS_CO1,
         loss_co2: LOSS_CO2,
         loss_co3: LOSS_CO3,
-        loss_b: LOSS_B
+        loss_b: LOSS_B,
+        target_class_num: TARGET_CLASS_NUM
     },
     trainer: {
         num_epochs: 20,
@@ -71,7 +80,6 @@ local LOSS_B = std.parseInt(std.extVar('LOSS_B'));
         learning_rate_scheduler: {
             type: "slanted_triangular",
             num_epochs: 10,
-            num_steps_per_epoch: 97957
         }
     }
 }
