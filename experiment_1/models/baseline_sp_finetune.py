@@ -7,7 +7,8 @@ from torch.functional import Tensor
 from torch.nn import functional as F
 from allennlp.data import Vocabulary
 from allennlp.models import Model
-from allennlp.modules import TextFieldEmbedder, FeedForward
+from allennlp.modules import TextFieldEmbedder, FeedForward, feedforward
+from allennlp.modules.stacked_alternating_lstm import StackedAlternatingLstm
 from allennlp.modules.stacked_bidirectional_lstm import StackedBidirectionalLstm
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.training.metrics import CategoricalAccuracy, BooleanAccuracy, F1Measure, FBetaMultiLabelMeasure
@@ -23,6 +24,11 @@ ML_RATIONAL_CNT_TO_PRED = 'rational_cnt_to_pred'
 
 RATIONAL_CAST_CUT = 'cut'
 
+ACTIVATION = {
+    'relu': torch.nn.ReLU(),
+    'sigmoid': torch.nn.Sigmoid(),
+    'tanh': torch.nn.Tanh()
+}
 
 @Model.register('fine_tune_baseline_sp')
 class FineTuneBaseline(Model):
@@ -32,8 +38,9 @@ class FineTuneBaseline(Model):
                  serialization_dir: Optional[str],
                  regularizer: Optional[RegularizerApplicator] = None,
                  target_class_num: int = 3,
-                 classifier: Union[StackedBidirectionalLstm,
+                 encoder:Union[StackedBidirectionalLstm,
                                    FeedForward] = None,
+                 classifier: FeedForward = None,
                  rational_mclassifier: FeedForward = None,
                  dropout: float = 0.0,
                  rational_cast_method: str = RATIONAL_CAST_CUT,
@@ -43,6 +50,32 @@ class FineTuneBaseline(Model):
                  loss_b: int = 0) -> None:
         super().__init__(vocab, regularizer=regularizer, serialization_dir=serialization_dir)
         self.embedder = embedder
+        self.encoder = encoder or torch.nn.Linear(
+            embedder.get_output_dim(), embedder.get_output_dim())
+        self.encoder_dict={}
+        if isinstance(self.encoder, Dict):
+            self.encoder_dict = self.encoder
+            if self.encoder['type'] == 'feedforward':
+                self.encoder=  FeedForward(
+                        input_dim=self.encoder['input_dim'],
+                        activations=ACTIVATION[self.encoder['activations']],
+                        hidden_dims=self.encoder['hidden_dims'],
+                        num_layers=self.encoder['num_layers'],
+                        dropout=self.encoder['dropout'] if 'dropout' in list(self.encoder.keys()) else 0
+                        )
+            elif self.encoder['type'] == 'LSTM':
+                self.encoder=  torch.nn.LSTM(
+                        input_size=self.encoder['input_size'],
+                        hidden_size=self.encoder['hidden_size'],
+                        num_layers=self.encoder['num_layers'],
+                        bias=self.encoder['bias'] if 'bias' in list(self.encoder.keys()) else True,
+                        batch_first=self.encoder['batch_first'] if 'batch_first' in list(self.encoder.keys()) else False,
+                        dropout=self.encoder['dropout'] if 'dropout' in list(self.encoder.keys()) else 0,
+                        bidirectional=self.encoder['bidirectional'] if 'bidirectional' in list(self.encoder.keys()) else False,
+                        proj_size=self.encoder['proj_size'] if 'proj_size' in list(self.encoder.keys()) else 0,
+                        )
+
+
         self.classifier = classifier or torch.nn.Linear(
             embedder.get_output_dim(), target_class_num)
         self.rational_mclassifier = rational_mclassifier or torch.nn.Linear(
@@ -127,16 +160,26 @@ class FineTuneBaseline(Model):
             t[i][token_size[i]:] = -1
         return t.to(t_.device)
 
+    def encode(self, sent_query: TextField, use_last:bool=True):
+        embedded_sent = self.embedder(sent_query)
+        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
+        embedded_sent = embedded_sent[:, 0, :]
+
+        if isinstance(self.encoder, torch.nn.Linear) == True or isinstance(self.encoder, FeedForward) == True:
+            embedded_sent = self.encoder(embedded_sent)
+        elif isinstance(self.encoder, torch.nn.LSTM) == True:
+            embedded_sent = embedded_sent.reshape((batch_size, 1, num_dim))
+            embedded_sent, _ = self.encoder(embedded_sent)
+        embedded_sent = self.dropout(embedded_sent)
+
+        return embedded_sent, batch_size, num_tokens_per_sent, num_dim
+
     def forward(self, sent_query: TextField, evidences: TextField = None,
                 label_target: LabelField = None,
                 meta: MetadataField = None) -> Dict[str, torch.Tensor]:
         evidences = evidences.double()
 
-        embedded_sent = self.embedder(sent_query)
-        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
-
-        embedded_sent = embedded_sent[:, 0, :]
-        embedded_sent = self.dropout(embedded_sent)
+        embedded_sent, batch_size, num_tokens_per_sent, num_dim = self.encode(sent_query=sent_query)
 
         logits = self.classifier(embedded_sent).squeeze().view(batch_size, -1)
         probs = F.softmax(logits, dim=1)
@@ -184,16 +227,42 @@ class FineTuneBaseline(Model):
 
 @Model.register('fine_tune_baseline_rational_to_pred_sp')
 class FineTuneBaselineRationalToPredictSoft(FineTuneBaseline):
+    def __init__(self,
+                 vocab: Vocabulary,
+                 embedder: TextFieldEmbedder,
+                 serialization_dir: Optional[str],
+                 regularizer: Optional[RegularizerApplicator] = None,
+                 target_class_num: int = 3,
+                 encoder:Union[StackedBidirectionalLstm,
+                                   FeedForward] = None,
+                 classifier: FeedForward = None,
+                 rational_mclassifier: FeedForward = None,
+                 dropout: float = 0.0,
+                 rational_cast_method: str = RATIONAL_CAST_CUT,
+                 loss_co1: int = 1,
+                 loss_co2: int = 1,
+                 loss_co3: int = 1,
+                 loss_b: int = 0) -> None:
+        super().__init__(vocab, embedder, serialization_dir, regularizer=regularizer,
+                         target_class_num=target_class_num, classifier=classifier,
+                         encoder=encoder,
+                         rational_mclassifier=rational_mclassifier, dropout=dropout,
+                         loss_co1=loss_co1, loss_co2=loss_co2,
+                         loss_co3=loss_co3, loss_b=loss_b)
+        if classifier is not None:
+            self.classifier = FeedForward(
+                input_dim=self.embedder.get_output_dim(),
+                hidden_dims=self.classifier.get_output_dim(),
+                num_layers=len(list(self.classifier._linear_layers)),
+                activations=torch.nn.ReLU())
+
+
     def forward(self, sent_query: TextField, evidences: TextField = None,
                 label_target: LabelField = None,
                 meta: MetadataField = None) -> Dict[str, torch.Tensor]:
         evidences = evidences.double()
 
-        embedded_sent = self.embedder(sent_query)
-        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
-
-        embedded_sent = embedded_sent[:, 0, :]
-        embedded_sent = self.dropout(embedded_sent)
+        embedded_sent, batch_size, num_tokens_per_sent, num_dim = self.encode(sent_query=sent_query)
 
         base_logits_rational = self.rational_mclassifier(
             embedded_sent).squeeze().view(batch_size, -1)
@@ -297,11 +366,7 @@ class FineTuneBaselineRationalToPredict(FineTuneBaseline):
                 meta: MetadataField = None) -> Dict[str, torch.Tensor]:
         evidences = evidences.double()
 
-        embedded_sent = self.embedder(sent_query)
-        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
-
-        embedded_sent = embedded_sent[:, 0, :]
-        embedded_sent = self.dropout(embedded_sent)
+        embedded_sent, batch_size, num_tokens_per_sent, num_dim = self.encode(sent_query=sent_query)
 
         base_logits_rational = self.rational_mclassifier(
             embedded_sent).squeeze().view(batch_size, -1)
