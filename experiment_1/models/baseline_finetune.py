@@ -29,12 +29,16 @@ class FineTuneBaseline(Model):
                  serialization_dir: Optional[str],
                  regularizer: Optional[RegularizerApplicator] = None,
                  target_class_num: int = 3,
+                 encoder:Union[StackedBidirectionalLstm,
+                                   FeedForward] = None,
                  classifier: Union[StackedBidirectionalLstm,
                                    FeedForward] = None,
                  rational_mclassifier: FeedForward = None,
                  dropout: float = 0.0) -> None:
         super().__init__(vocab, regularizer=regularizer, serialization_dir=serialization_dir)
         self.embedder = embedder
+        self.encoder = encoder or torch.nn.Linear(
+            embedder.get_output_dim(), target_class_num)
         self.classifier = classifier or torch.nn.Linear(
             embedder.get_output_dim(), target_class_num)
         self.rational_mclassifier = rational_mclassifier or torch.nn.Linear(
@@ -104,16 +108,24 @@ class FineTuneBaseline(Model):
             l.append(l2)
         return l
 
+    def encode(self, sent_query: TextField, use_last:bool=True):
+        embedded_sent = self.embedder(sent_query)
+        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
+
+        embedded_sent = embedded_sent[:, 0, :]
+        if isinstance(self.encoder, torch.nn.Linear) == True:
+            embedded_sent = self.encoder(embedded_sent)
+        embedded_sent = self.dropout(embedded_sent)
+
+        return embedded_sent, batch_size, num_tokens_per_sent, num_dim
+
+
     def forward(self, sent_query: TextField, evidences: TextField = None,
                 label_target: LabelField = None,
                 meta: MetadataField = None) -> Dict[str, torch.Tensor]:
         evidences = evidences.double()
 
-        embedded_sent = self.embedder(sent_query)
-        batch_size, num_tokens_per_sent, num_dim = embedded_sent.size()
-
-        embedded_sent = embedded_sent[:, 0, :]
-        embedded_sent = self.dropout(embedded_sent)
+        embedded_sent, batch_size, num_tokens_per_sent, num_dim = self.encode(sent_query=sent_query)
 
         logits = self.classifier(embedded_sent).squeeze().view(batch_size, -1)
         probs = F.softmax(logits, dim=1)

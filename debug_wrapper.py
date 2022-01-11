@@ -6,36 +6,31 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 from allennlp.commands import main
 
-config_file = "experiment_1/conf/baseline_linear.jsonnet"
-model_name = 'bert-base-uncased'
-model_type = 'fine_tune_baseline_sp'
-train_data_path = "./data/esnli/val.jsonl"
-validation_data_path ="./data/esnli/val2.jsonl"
-test_data_path = "./data/esnli/test.jsonl"
-labels = ['neutral', 'entailment', 'contradiction']
-labels_str = ','.join(labels)
-seed_number = 0
-cuda_device = 0
-serialization_dir = "./debugger_train"
-loss_co1 = 1
-loss_co2 = 1
-loss_co3 = 1
-loss_b = 1
+dataset_folder = "./data/cose/"
+config_file = "experiment_2/classifiers/bert_encoder_generator.jsonnet"
+train_data_path ="./data/cose/val.jsonl"
+dev_data_path ="./data/cose/val.jsonl"
+test_data_path = "./data/cose/test.jsonl"
+output_base_path="experiment_2/output/cose/"
+seed = 0
+cuda_device=-1
 
+batch_size = 4
+exp_name="test_1"
+rs_weight=1
 
-os.environ["MODEL_NAME"] = model_name
-os.environ["MODEL_TYPE"] = model_type
-os.environ["SEED_NUMBER"] = str(seed_number)
-os.environ["TRAIN_DATA_PATH"] = validation_data_path
-os.environ["VALIDATION_DATA_PATH"] = validation_data_path
+os.environ["data_base_path"] = dataset_folder
+os.environ["CONFIG_FILE"] = config_file
+os.environ["TRAIN_DATA_PATH"] = train_data_path
+os.environ["DEV_DATA_PATH"] = dev_data_path
 os.environ["TEST_DATA_PATH"] = test_data_path
-os.environ["LABELS"] = labels_str
+os.environ["OUTPUT_BASE_PATH"] = output_base_path
 os.environ["CUDA_DEVICE"] = str(cuda_device)
-os.environ["SERIALIZATION_DIR"] = str(serialization_dir)
-os.environ["LOSS_CO1"] = str(loss_co1)
-os.environ["LOSS_CO2"] = str(loss_co2)
-os.environ["LOSS_CO3"] = str(loss_co3)
-os.environ["LOSS_B"] = str(loss_b)
+os.environ["SEED"] = str(seed)
+os.environ["batch_size"] = str(batch_size)
+os.environ["exp_name"] = exp_name
+os.environ["rs_weight"] = str(rs_weight)
+
 
 
 # Use overrides to train on CPU.
@@ -46,15 +41,15 @@ overrides = json.dumps({"trainer": {"cuda_device": -1}})
 # over and over again for debugging purposes, it will.
 # Hence we wipe it out in advance.
 # BE VERY CAREFUL NOT TO DO THIS FOR ACTUAL TRAINING!
-shutil.rmtree(serialization_dir, ignore_errors=True)
+shutil.rmtree(output_base_path, ignore_errors=True)
 
 # Assemble the command into sys.argv
 run_training = [
     "allennlp",  # command name, not used by main
     "train",
     config_file,
-    "-s", serialization_dir,
-    "--include-package", "experiment_1",
+    "-s", output_base_path,
+    "--include-package", "experiment_2",
     "-o", overrides,
 ]
 
