@@ -7,11 +7,11 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 from allennlp.commands import main
 
 dataset_folder = "./data/cose/"
-config_file = "experiment_3/conf/bert_encoder_generator.jsonnet"
+config_file = "experiment_2/classifiers/bert_encoder_generator.jsonnet"
 train_data_path ="./data/cose/val.jsonl"
 dev_data_path ="./data/cose/val.jsonl"
 test_data_path = "./data/cose/test.jsonl"
-output_base_path="experiment_3/output/cose/"
+output_base_path="experiment_2/output/cose/"
 seed = 0
 cuda_device=-1
 
@@ -49,7 +49,7 @@ run_training = [
     "train",
     config_file,
     "-s", output_base_path,
-    "--include-package", "experiment_3",
+    "--include-package", "experiment_2",
     "-o", overrides,
 ]
 
