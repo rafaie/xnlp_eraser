@@ -76,14 +76,15 @@ class Rationale2DocsModel(Model):
 
         output_dict = {}
 
+        device=premise_embedded_text.device
         mask = util.get_text_field_mask(document).float()
         mask = torch.cat(
-            (mask, torch.zeros(mask.shape[0], probs.shape[1]-mask.shape[1])), 1)
+            (mask, torch.zeros((mask.shape[0], probs.shape[1]-mask.shape[1]), device=device)), 1)
         predicted_rationale = (probs > 0.5).long()
         output_dict['predicted_rationale'] = predicted_rationale * mask
 
         premise_mask2 = torch.cat((premise_mask, torch.zeros(
-            mask.shape[0], mask.shape[1] - premise_mask.shape[1])), 1)
+            (mask.shape[0], mask.shape[1] - premise_mask.shape[1]), device=device)), 1)
         output_dict["premise_prob_z"] = (
             probs * premise_mask2)[:, :premise_mask.shape[1]]
 
@@ -107,7 +108,7 @@ class Rationale2DocsModel(Model):
 
         if rationale is not None:
             rationale = torch.cat((rationale, torch.zeros(
-                rationale.shape[0], mask.shape[1] - rationale.shape[1])), 1)
+                (rationale.shape[0], mask.shape[1] - rationale.shape[1]), device=device)), 1)
             rationale_loss = F.binary_cross_entropy_with_logits(
                 logits, rationale.float(), weight=mask)
             output_dict['rationale_supervision_loss'] = rationale_loss
