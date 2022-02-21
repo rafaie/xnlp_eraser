@@ -9,4 +9,7 @@
 #SBATCH --mem=16gb
 
 module load singularity
-singularity exec docker://rafaie/allennlp:2.3.1 $1 
+
+echo "Hello!!"
+echo "$@"
+singularity exec docker://rafaie/allennlp:2.8.0 $@ 
