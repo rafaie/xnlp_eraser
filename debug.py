@@ -126,7 +126,8 @@ def gen_metric(dataset, dataset_path, data_file, output_dir):
     output_base_path = output_dir
 
     metrics = [
-        "python3 rationale_benchmark/metrics.py",
+        "python3", 
+        "eraserbenchmark/rationale_benchmark/metrics.py",
         "--data_dir", dataset_folder,
         "--split", data_file,
         "--results", os.path.join(output_dir,
@@ -134,6 +135,11 @@ def gen_metric(dataset, dataset_path, data_file, output_dir):
         "--score_file", os.path.join(output_dir,
                                      data_file.split('.')[0]+'_score.json')
     ]
+
+    print(metrics)
+    subprocess.run(metrics)
+
+
 
 
 if __name__ == '__main__':
