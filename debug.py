@@ -4,6 +4,8 @@ import shutil
 import sys
 import os
 import argparse
+import subprocess
+
 from datetime import datetime
 
 from sklearn import metrics
@@ -89,34 +91,32 @@ def predict(dataset, dataset_path, data_file, experiment,
     os.environ["classifier"] = classifier
     os.environ["output_dir"] = output_dir
     os.environ["exp_name"] = exp_name
-    os.environ["batch_size"] = batch_size
+    os.environ["batch_size"] = str(batch_size)
     os.environ["CUDA_DEVICE"] = str(cuda_device)
 
     os.environ["TEST_DATA_PATH"] = data_path
 
     # Use overrides to train on CPU.
-    overrides = json.dumps({"trainer": {"cuda_device": -1}})
+    overrides = json.dumps({"trainer": {"cuda_device": "-1"}})
 
     # Assemble the command into sys.argv
     run_predict = [
         "allennlp",  # command name, not used by main
         "predict",
-        "--output-file ", os.path.join(output_dir,
-                                       data_file.split('.')[0]+'_pred.jsonl'),
+        "--output-file", os.path.join(output_dir,
+                                      data_file.split('.')[0]+'_pred.jsonl'),
         "--predictor", "rationale_predictor",
         "--include-package",  experiment,
-        # "--silent",
-        "--cuda-device", cuda_device,
-        "--batch-size", "batch_size",
+        "--silent",
+        "--cuda-device", str(cuda_device),
+        "--batch-size", str(batch_size),
         "--use-dataset-reader",
         "--dataset-reader-choice", "validation",
-        os.path.join(output_dir, "model.tar.gz"), data_path,
-        "-o", overrides,
-        data_path
+        os.path.join(output_dir, "model.tar.gz"), data_path
     ]
 
-    # sys.argv = export_cmd + ["&&"] + run_training
     sys.argv = run_predict
+    print(run_predict)
 
     main()
 
