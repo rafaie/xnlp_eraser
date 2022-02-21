@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
@@ -25,7 +25,8 @@ class RationaleBaseModel(Model):
     def forward(self, document, sentence_indices, query=None, labels=None, metadata=None):
         raise NotImplementedError
 
-    def decode(self, output_dict):
+    # @overrides
+    def make_output_human_readable(self, output_dict: Dict[str, Any]) -> Dict[str, Any]:
         output_dict = self._decode(output_dict)
         return output_dict
 
