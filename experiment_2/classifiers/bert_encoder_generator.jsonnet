@@ -31,15 +31,11 @@ local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] t
     generator: {
       type: "simple_generator_model",
       text_field_embedder: {
-        // allow_unmatched_keys: true,
-        // embedder_to_indexer_map: {
-        //   bert: ["bert", "bert-offsets"],
-        // },
+        
         token_embedders: {
           bert: {
             type: "pretrained_transformer",
             model_name: 'bert-base-uncased',
-            // requires_grad: 'none',
           },
         },
       },
@@ -59,15 +55,10 @@ local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] t
     encoder : {
       type: "encoder_rationale_model" + (if is_cose then '_cose' else ''),
       text_field_embedder: {
-        // allow_unmatched_keys: true,
-        // embedder_to_indexer_map: {
-        //   bert: ["bert", "bert-offsets"],
-        // },
         token_embedders: {
           bert: {
             type: "pretrained_transformer",
             model_name: 'bert-base-uncased',
-            // requires_grad: '11,10,pooler',
           },
         },
       },
@@ -97,12 +88,6 @@ local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] t
     reinforce_loss_weight: 1.0,
     rationale_supervision_loss_weight: std.parseInt(std.extVar('rs_weight'))
   },
-  // iterator: {
-  //   type: "bucket",
-  //   sorting_keys: [['document', 'num_tokens']],
-  //   batch_size : std.extVar("batch_size"),
-  //   biggest_batch_first: true
-  // },
   trainer: {
     num_epochs: 20,
     patience: 5,
