@@ -127,10 +127,10 @@ local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] t
     patience: 5,
     grad_norm: 10.0,
     validation_metric: "+accuracy",
-    cuda_device: std.extVar("CUDA_DEVICE"),
+    cuda_device: std.parseInt(std.extVar("CUDA_DEVICE")),
     checkpointer: {
             serialization_dir:std.extVar('OUTPUT_BASE_PATH'),
-            num_serialized_models_to_keep: 1
+            keep_most_recent_by_count: 2
     },
     optimizer: {
       type: "adam",
