@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any
 
 import torch
 import torch.distributions as D
+import numpy as np
 
 from allennlp.models.model import Model
 from allennlp.common.params import Params
@@ -127,10 +128,12 @@ class Base2DocsModel(BaseModel):
                 + query_lasso_loss * self._reg_loss_lambda
                 + query_fused_lasso_loss * (self._reg_loss_mu * self._reg_loss_lambda)
             ) * query_log_prob_z_sum
+            query_generator_loss_mean = query_generator_loss.mean() if np.isnan(query_generator_loss.mean().item()) is False else torch.as_tensor(0.0, device=premise_generator_loss.device)
 
             self._loss_tracks["base_loss"](loss_sample.mean().item())
 
-            loss += self._reinforce_loss_weight * premise_generator_loss.mean() +  self._reinforce_loss_weight * query_generator_loss.mean()
+            loss += self._reinforce_loss_weight * premise_generator_loss.mean() +  \
+                    self._reinforce_loss_weight * query_generator_loss_mean
 
         output_dict = rationale_dict
         loss += self._rationale_supervision_loss_weight * rationale_dict.get("rationale_supervision_loss", 0.0)
