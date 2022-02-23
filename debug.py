@@ -22,7 +22,7 @@ DEFAULT_TRAIN_FILE = 'train.jsonl'
 DEFAULT_DEV_FILE = 'val.jsonl'
 DEFAULT_TEST_FILE = 'test.jsonl'
 DEFAULT_CONFIG = "experiment_3/conf/bert_encoder_generator.jsonnet"
-DEFAULT_CUDA_DEVICE = -1
+DEFAULT_CUDA_DEVICE = 0
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_PREDICT_BATCH_SIZE = 4
 DEFAULT_EXP_NAME = 'test_1'
@@ -58,7 +58,7 @@ def train(dataset, config_file, dataset_path, experiment,
     os.environ["rs_weight"] = str(rs_weight)
 
     # Use overrides to train on CPU.
-    overrides = json.dumps({"trainer": {"cuda_device": -1}})
+    # overrides = json.dumps({"trainer": {"cuda_device": str(cuda_device)}})
 
     # Assemble the command into sys.argv
     run_training = [
@@ -67,7 +67,7 @@ def train(dataset, config_file, dataset_path, experiment,
         config_file,
         "-s", output_base_path,
         "--include-package", experiment,
-        "-o", overrides,
+        # "-o", overrides,
     ]
 
     # sys.argv = export_cmd + ["&&"] + run_training
@@ -97,7 +97,7 @@ def predict(dataset, dataset_path, data_file, experiment,
     os.environ["TEST_DATA_PATH"] = data_path
 
     # Use overrides to train on CPU.
-    overrides = json.dumps({"trainer": {"cuda_device": "-1"}})
+    overrides = json.dumps({"trainer": {"cuda_device": str(cuda_device)}})
 
     # Assemble the command into sys.argv
     run_predict = [
@@ -220,7 +220,7 @@ if __name__ == '__main__':
                         dest="cuda_device",
                         type=int,
                         default=DEFAULT_CUDA_DEVICE,
-                        help="cuda_device. default: -1")
+                        help="cuda_device. default: 0")
 
     parser.add_argument("--batch_size",
                         dest="batch_size",
@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
         gen_metric(dataset=args.dataset,
                    dataset_path=args.dataset_path,
-                   data_file='dev',
+                   data_file='val',
                    output_dir=output_base_path)
 
         predict(dataset=args.dataset,
