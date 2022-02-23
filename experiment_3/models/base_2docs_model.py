@@ -61,7 +61,7 @@ class Base2DocsModel(BaseModel):
         assert "premise_prob_z" in rationale_dict
         assert "query_prob_z" in rationale_dict
 
-        mask = util.get_text_field_mask(document)
+        mask = rationale_dict["mask"]
 
         premise_prob_z = rationale_dict["premise_prob_z"]
         premise_mask = util.get_text_field_mask(premise)
@@ -157,7 +157,7 @@ class Base2DocsModel(BaseModel):
 
         output_dict["predicted_labels"] = output_dict["predicted_labels"].cpu().data.numpy()
 
-        masks = output_dict["mask"].cpu().data.numpy()
+        masks = output_dict["mask"].float().cpu().data.numpy()
         predicted_rationales = output_dict["predicted_rationale"].cpu().data.numpy()
         metadata = output_dict["metadata"]
         soft_scores = output_dict["prob_z"].cpu().data.numpy()
