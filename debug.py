@@ -15,7 +15,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 DEFAULT_DATASET = 'cose'
 DEFAULT_EXPERIMENT = 'experiment_3'
-DEFAULT_DATASET_PATH = './data/'
+DEFAULT_DATASET_PATH = os.path.join(os.getcwd(), 'data')
 DEFAULT_OUTPUT_PATH = 'output'
 DEFAULT_SEED = 0
 DEFAULT_TRAIN_FILE = 'train.jsonl'
@@ -66,7 +66,7 @@ def train(dataset, config_file, dataset_path, experiment,
         "train",
         config_file,
         "-s", output_base_path,
-        "--include-package", "experiment_3",
+        "--include-package", experiment,
         "-o", overrides,
     ]
 
