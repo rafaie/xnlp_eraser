@@ -101,7 +101,15 @@ local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] t
     optimizer: {
       type: "adam",
       lr: 2e-5
-    }
+    },
+    callbacks: [
+          {
+            type: "tensorboard",
+            serialization_dir: std.extVar('OUTPUT_BASE_PATH'),
+            should_log_parameter_statistics: true,
+            should_log_learning_rate:true
+            }
+    ]
   },
   random_seed:  std.parseInt(std.extVar("SEED")),
   pytorch_seed: std.parseInt(std.extVar("SEED")),
