@@ -41,9 +41,10 @@ def train(dataset, config_file, dataset_path, experiment,
     test_data_path = os.path.join(
         dataset_folder, test_file)  # "./data/cose/test.jsonl"
     now = datetime.now()
+    config_name = os.path.basename(config_file).split('.')[0]
     dt = now.strftime("%Y_%m_%d_%H_%M_%S")
     # "experiment_3/output/cose/"
-    output_base_path = os.path.join(experiment, output_path, dataset, dt)
+    output_base_path = os.path.join(experiment, output_path, dataset, config_name, dt)
 
     os.environ["data_base_path"] = dataset_folder
     os.environ["CONFIG_FILE"] = config_file
