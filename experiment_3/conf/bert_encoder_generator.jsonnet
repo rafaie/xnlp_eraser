@@ -1,4 +1,5 @@
-local DS_TYPE = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] then 'cose' else 'etc';
+local DS_TYPE = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] then 'etc' else 'cose';
+local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] then false else true;
 
 {
   dataset_reader : {
