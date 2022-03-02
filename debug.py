@@ -54,7 +54,7 @@ def train(dataset, config_file, dataset_path, experiment,
     os.environ["OUTPUT_BASE_PATH"] = output_base_path
     os.environ["CUDA_DEVICE"] = str(cuda_device)
     os.environ["SEED"] = str(seed)
-    os.environ["batch_size"] = str(batch_size)
+    os.environ["BATCH_SIZE"] = str(batch_size)
     os.environ["exp_name"] = exp_name
     os.environ["rs_weight"] = str(rs_weight)
 
@@ -92,7 +92,7 @@ def predict(dataset, dataset_path, data_file, experiment,
     os.environ["classifier"] = classifier
     os.environ["output_dir"] = output_dir
     os.environ["exp_name"] = exp_name
-    os.environ["batch_size"] = str(batch_size)
+    os.environ["BATCH_SIZE"] = str(batch_size)
     os.environ["CUDA_DEVICE"] = str(cuda_device)
 
     os.environ["TEST_DATA_PATH"] = data_path
@@ -110,7 +110,6 @@ def predict(dataset, dataset_path, data_file, experiment,
         "--include-package",  experiment,
         "--silent",
         "--cuda-device", str(cuda_device),
-        "--batch-size", str(batch_size),
         "--use-dataset-reader",
         "--dataset-reader-choice", "validation",
         os.path.join(output_dir, "model.tar.gz"), data_path
