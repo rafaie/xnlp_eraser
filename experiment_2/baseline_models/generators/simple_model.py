@@ -72,7 +72,8 @@ class SimpleGeneratorModel(Model):
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         p, r, f1 = self._rationale_f1_metric.get_metric(reset)
-        metrics = {'_rationale_' + k:v for v, k in zip([p,r,f1], ['p', 'r', 'f1'])}
+        # metrics = {'_rationale_' + k:v for v, k in zip([p,r,f1], ['p', 'r', 'f1'])}
+        metrics = {}
         metrics.update({'_rationale_length' : self._rationale_length.get_metric(reset)})
         metrics.update({'rationale_loss' : self._rationale_supervision_loss.get_metric(reset)})
 
