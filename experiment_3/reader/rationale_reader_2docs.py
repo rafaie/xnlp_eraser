@@ -11,8 +11,9 @@ from allennlp.data.tokenizers import Token
 
 from eraserbenchmark.rationale_benchmark.utils import annotations_from_jsonl, load_flattened_documents, Evidence
 
-COSE_DATASET='coes'
-ETC_DATASET='etc'
+COSE_DATASET = 'cose'
+ETC_DATASET = 'etc'
+
 
 @DatasetReader.register("rationale_reader_2docs")
 class RationaleReader2Docs(DatasetReader):
@@ -21,8 +22,7 @@ class RationaleReader2Docs(DatasetReader):
         token_indexers: Dict[str, TokenIndexer],
         max_sequence_length: int = None,
         keep_prob: float = 1.0,
-        lazy: bool = False,
-        ds_type:str=ETC_DATASET
+        lazy: bool = False
     ) -> None:
         super().__init__()
         self._max_sequence_length = max_sequence_length
@@ -30,7 +30,7 @@ class RationaleReader2Docs(DatasetReader):
 
         self._keep_prob = keep_prob
         self._bert = "bert" in token_indexers
-        self.ds_type = ds_type
+        self.ds_type = ETC_DATASET
 
     def generate_document_evidence_map(self, evidences: List[List[Evidence]]) -> Dict[str, List[Tuple[int, int]]]:
         document_evidence_map = {}
@@ -38,7 +38,8 @@ class RationaleReader2Docs(DatasetReader):
             for evclause in evgroup:
                 if evclause.docid not in document_evidence_map:
                     document_evidence_map[evclause.docid] = []
-                document_evidence_map[evclause.docid].append((evclause.start_token, evclause.end_token))
+                document_evidence_map[evclause.docid].append(
+                    (evclause.start_token, evclause.end_token))
 
         return document_evidence_map
 
@@ -46,17 +47,25 @@ class RationaleReader2Docs(DatasetReader):
     def _read(self, file_path):
         data_dir = os.path.dirname(file_path)
         annotations = annotations_from_jsonl(file_path)
-        documents: Dict[str, List[str]] = load_flattened_documents(data_dir, docids=None)
+        documents: Dict[str, List[str]] = load_flattened_documents(
+            data_dir, docids=None)
+
+        # update ds_type
+        if COSE_DATASET in file_path.lower():
+            self.ds_type = COSE_DATASET
 
         for _, line in enumerate(annotations):
             annotation_id: str = line.annotation_id
             evidences: List[List[Evidence]] = line.evidences
             label: str = line.classification
             query: str = line.query
-            docids: List[str] = sorted(list(set([evclause.docid for evgroup in evidences for evclause in evgroup])))
+            docids: List[str] = sorted(
+                list(set([evclause.docid for evgroup in evidences for evclause in evgroup])))
 
-            filtered_documents: Dict[str, List[str]] = dict([(d, documents[d]) for d in docids])
-            document_evidence_map = self.generate_document_evidence_map(evidences)
+            filtered_documents: Dict[str, List[str]] = dict(
+                [(d, documents[d]) for d in docids])
+            document_evidence_map = self.generate_document_evidence_map(
+                evidences)
 
             if label is not None:
                 label = str(label)
@@ -97,7 +106,8 @@ class RationaleReader2Docs(DatasetReader):
             document_tokens = [Token(word) for word in docwords]
             tokens += document_tokens
             premise_tokens += document_tokens
-            document_to_span_map[docid] = (len(tokens) - len(docwords), len(tokens))
+            document_to_span_map[docid] = (
+                len(tokens) - len(docwords), len(tokens))
 
             always_keep_mask += [0] * len(document_tokens)
             premise_always_keep_mask += [0] * len(document_tokens)
@@ -138,7 +148,8 @@ class RationaleReader2Docs(DatasetReader):
             always_keep_mask, sequence_field=fields["document"], label_namespace="kept_token_labels"
         )
         fields["premise_kept_tokens"] = SequenceLabelField(
-            premise_always_keep_mask, sequence_field=fields["premise"], label_namespace="premise_kept_token_labels"
+            premise_always_keep_mask, sequence_field=fields[
+                "premise"], label_namespace="premise_kept_token_labels"
         )
         fields["query_kept_tokens"] = SequenceLabelField(
             query_always_keep_mask, sequence_field=fields["query"], label_namespace="query_kept_token_labels"
@@ -155,7 +166,7 @@ class RationaleReader2Docs(DatasetReader):
             "query_tokens": query_tokens,
             "document_to_span_map": document_to_span_map,
             "convert_tokens_to_instance": self.convert_tokens_to_instance,
-            "always_keep_mask" : np.array(always_keep_mask)
+            "always_keep_mask": np.array(always_keep_mask)
         }
 
         fields["metadata"] = MetadataField(metadata)
@@ -164,7 +175,8 @@ class RationaleReader2Docs(DatasetReader):
             if self.ds_type == COSE_DATASET:
                 query = query.split("[sep]")
                 query = [x.strip() for x in query]
-                fields["label"] = MetadataField({k: v for k, v in zip(["A", "B", "C", "D", "E", "Label"], query + [label])})
+                fields["label"] = MetadataField({k: v for k, v in zip(
+                    ["A", "B", "C", "D", "E", "Label"], query + [label])})
             else:
                 fields["label"] = LabelField(label, label_namespace="labels")
 

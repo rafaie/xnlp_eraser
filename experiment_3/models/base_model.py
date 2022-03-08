@@ -36,6 +36,8 @@ class BaseModel(Model):
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         metrics = self._f1_metric.get_metric(reset)
         output_labels = self._vocabulary.get_index_to_token_vocabulary("labels")
+        if len(output_labels) == 0: # COSE
+            output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
         output_labels = [output_labels[i] for i in range(len(output_labels))]
 
         class_metrics = {}

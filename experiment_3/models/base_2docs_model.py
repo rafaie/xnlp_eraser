@@ -48,8 +48,8 @@ class Base2DocsModel(BaseModel):
         self._rationale_supervision_loss_weight = rationale_supervision_loss_weight
         self._loss_tracks = {
             k: Average() for k in ["premise_lasso_loss", "premise_fused_lasso_loss",
-                                    "query_lasso_loss", "query_fused_lasso_loss",
-                                    "base_loss"]}
+                                   "query_lasso_loss", "query_fused_lasso_loss",
+                                   "base_loss"]}
 
         initializer(self)
 
@@ -92,51 +92,66 @@ class Base2DocsModel(BaseModel):
             loss += loss_sample.mean()
 
             # Permise
-            premise_lasso_loss = util.masked_mean(premise_sample_z, premise_mask, dim=-1)  # (B,)
+            premise_lasso_loss = util.masked_mean(
+                premise_sample_z, premise_mask, dim=-1)  # (B,)
             premise_masked_sum = premise_mask[:, :-1].sum(-1).clamp(1e-5)
-            premise_diff = (premise_sample_z[:, 1:] - premise_sample_z[:, :-1]).abs()
+            premise_diff = (
+                premise_sample_z[:, 1:] - premise_sample_z[:, :-1]).abs()
             premise_masked_diff = (premise_diff * premise_mask[:, :-1]).sum(-1)
             premise_fused_lasso_loss = premise_masked_diff / premise_masked_sum
 
-            self._loss_tracks["premise_lasso_loss"](premise_lasso_loss.mean().item())
-            self._loss_tracks["premise_fused_lasso_loss"](premise_fused_lasso_loss.mean().item())
+            self._loss_tracks["premise_lasso_loss"](
+                premise_lasso_loss.mean().item())
+            self._loss_tracks["premise_fused_lasso_loss"](
+                premise_fused_lasso_loss.mean().item())
 
-            premise_log_prob_z = torch.log(1 + torch.exp(premise_sampler.log_prob(premise_sample_z)))  # (B, L)
-            premise_log_prob_z_sum = (premise_mask * premise_log_prob_z).mean(-1)  # (B,)
+            premise_log_prob_z = torch.log(
+                1 + torch.exp(premise_sampler.log_prob(premise_sample_z)))  # (B, L)
+            premise_log_prob_z_sum = (
+                premise_mask * premise_log_prob_z).mean(-1)  # (B,)
 
             premise_generator_loss = (
                 loss_sample.detach()
                 + premise_lasso_loss * self._reg_loss_lambda
-                + premise_fused_lasso_loss * (self._reg_loss_mu * self._reg_loss_lambda)
+                + premise_fused_lasso_loss *
+                (self._reg_loss_mu * self._reg_loss_lambda)
             ) * premise_log_prob_z_sum
 
             # Query
-            query_lasso_loss = util.masked_mean(query_sample_z, query_mask, dim=-1)  # (B,)
+            query_lasso_loss = util.masked_mean(
+                query_sample_z, query_mask, dim=-1)  # (B,)
             query_masked_sum = query_mask[:, :-1].sum(-1).clamp(1e-5)
             query_diff = (query_sample_z[:, 1:] - query_sample_z[:, :-1]).abs()
             query_masked_diff = (query_diff * query_mask[:, :-1]).sum(-1)
             query_fused_lasso_loss = query_masked_diff / query_masked_sum
 
-            self._loss_tracks["query_lasso_loss"](query_lasso_loss.mean().item())
-            self._loss_tracks["query_fused_lasso_loss"](query_fused_lasso_loss.mean().item())
+            self._loss_tracks["query_lasso_loss"](
+                query_lasso_loss.mean().item())
+            self._loss_tracks["query_fused_lasso_loss"](
+                query_fused_lasso_loss.mean().item())
 
-            query_log_prob_z = torch.log(1 + torch.exp(query_sampler.log_prob(query_sample_z)))  # (B, L)
-            query_log_prob_z_sum = (query_mask * query_log_prob_z).mean(-1)  # (B,)
+            query_log_prob_z = torch.log(
+                1 + torch.exp(query_sampler.log_prob(query_sample_z)))  # (B, L)
+            query_log_prob_z_sum = (
+                query_mask * query_log_prob_z).mean(-1)  # (B,)
 
             query_generator_loss = (
                 loss_sample.detach()
                 + query_lasso_loss * self._reg_loss_lambda
-                + query_fused_lasso_loss * (self._reg_loss_mu * self._reg_loss_lambda)
+                + query_fused_lasso_loss *
+                (self._reg_loss_mu * self._reg_loss_lambda)
             ) * query_log_prob_z_sum
-            query_generator_loss_mean = query_generator_loss.mean() if np.isnan(query_generator_loss.mean().item()) is False else torch.as_tensor(0.0, device=premise_generator_loss.device)
+            query_generator_loss_mean = query_generator_loss.mean() if np.isnan(query_generator_loss.mean(
+            ).item()) is False else torch.as_tensor(0.0, device=premise_generator_loss.device)
 
             self._loss_tracks["base_loss"](loss_sample.mean().item())
 
             loss += self._reinforce_loss_weight * premise_generator_loss.mean() +  \
-                    self._reinforce_loss_weight * query_generator_loss_mean
+                self._reinforce_loss_weight * query_generator_loss_mean
 
         output_dict = rationale_dict
-        loss += self._rationale_supervision_loss_weight * rationale_dict.get("rationale_supervision_loss", 0.0)
+        loss += self._rationale_supervision_loss_weight * \
+            rationale_dict.get("rationale_supervision_loss", 0.0)
 
         output_dict["logits"] = objective_dict["logits"]
         output_dict['probs'] = objective_dict['probs']
@@ -155,10 +170,12 @@ class Base2DocsModel(BaseModel):
     def _decode(self, output_dict) -> Dict[str, Any]:
         new_output_dict = {}
 
-        output_dict["predicted_labels"] = output_dict["predicted_labels"].cpu().data.numpy()
+        output_dict["predicted_labels"] = output_dict["predicted_labels"].cpu(
+        ).data.numpy()
 
         masks = output_dict["mask"].float().cpu().data.numpy()
-        predicted_rationales = output_dict["predicted_rationale"].cpu().data.numpy()
+        predicted_rationales = output_dict["predicted_rationale"].cpu(
+        ).data.numpy()
         metadata = output_dict["metadata"]
         soft_scores = output_dict["prob_z"].cpu().data.numpy()
 
@@ -190,10 +207,15 @@ class Base2DocsModel(BaseModel):
 
             new_output_dict["rationales"].append(document_rationale)
 
-        output_labels = self._vocabulary.get_index_to_token_vocabulary("labels")
+        output_labels = self._vocabulary.get_index_to_token_vocabulary(
+            "labels")
+        if 'A' in list(output_labels.values()) and len(list(output_labels.values())) == 5:
+            output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
-        new_output_dict["annotation_id"] = [m["annotation_id"] for m in metadata]
-        new_output_dict["classification"] = [output_labels[int(p)] for p in output_dict["predicted_labels"]]
+        new_output_dict["annotation_id"] = [m["annotation_id"]
+                                            for m in metadata]
+        new_output_dict["classification"] = [
+            output_labels[int(p)] for p in output_dict["predicted_labels"]]
 
         _output_labels = [output_labels[i] for i in range(self._num_labels)]
         new_output_dict["classification_scores"] = [
@@ -205,8 +227,10 @@ class Base2DocsModel(BaseModel):
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         base_metrics = super(Base2DocsModel, self).get_metrics(reset)
 
-        loss_metrics = {"_total" + k: v._total_value for k, v in self._loss_tracks.items()}
-        loss_metrics.update({k: v.get_metric(reset) for k, v in self._loss_tracks.items()})
+        loss_metrics = {"_total" + k: v._total_value for k,
+                        v in self._loss_tracks.items()}
+        loss_metrics.update({k: v.get_metric(reset)
+                            for k, v in self._loss_tracks.items()})
         loss_metrics.update(base_metrics)
         loss_metrics.update(self._rationale_model.get_metrics(reset))
 
