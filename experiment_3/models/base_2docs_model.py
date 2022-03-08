@@ -209,7 +209,8 @@ class Base2DocsModel(BaseModel):
 
         output_labels = self._vocabulary.get_index_to_token_vocabulary(
             "labels")
-        if 'A' in list(output_labels.values()) and len(list(output_labels.values())) == 5:
+        if ('A' in list(output_labels.values()) and len(list(output_labels.values())) == 5) or \
+            len(list(output_labels.values())) == 0:
             output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
         new_output_dict["annotation_id"] = [m["annotation_id"]
