@@ -80,7 +80,7 @@ class Rationale2DocsModel(Model):
         mask = util.get_text_field_mask(document).float()
         mask = torch.cat(
             (mask, torch.zeros((mask.shape[0], probs.shape[1]-mask.shape[1]), device=device)), 1)
-        output_dict['mask'] = mask
+        output_dict['mask'] = mask.bool()
 
         predicted_rationale = (probs > 0.5).long()
         output_dict['predicted_rationale'] = predicted_rationale * mask
