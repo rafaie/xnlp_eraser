@@ -21,13 +21,13 @@ DEFAULT_SEED = 0
 DEFAULT_TRAIN_FILE = 'train.jsonl'
 DEFAULT_DEV_FILE = 'val.jsonl'
 DEFAULT_TEST_FILE = 'test.jsonl'
-DEFAULT_CONFIG = "experiment_3/conf/bert_encoder_generator.jsonnet"
+DEFAULT_CONFIG = "experiment_3/conf/base_2docs_model.jsonnet"
 DEFAULT_CUDA_DEVICE = 0
 DEFAULT_BATCH_SIZE = 32
 DEFAULT_PREDICT_BATCH_SIZE = 4
 DEFAULT_EXP_NAME = 'test_1'
 DEFAULT_RS_WEIGHT = 1
-DEFAULT_CLASSIFIER = 'bert_encoder_generator'
+DEFAULT_CLASSIFIER = 'base_2docs_model'
 
 
 def train(dataset, config_file, dataset_path, experiment,
@@ -44,7 +44,8 @@ def train(dataset, config_file, dataset_path, experiment,
     config_name = os.path.basename(config_file).split('.')[0]
     dt = now.strftime("%Y_%m_%d_%H_%M_%S")
     # "experiment_3/output/cose/"
-    output_base_path = os.path.join(experiment, output_path, dataset, config_name, dt)
+    output_base_path = os.path.join(
+        experiment, output_path, dataset, config_name, dt)
 
     os.environ["data_base_path"] = dataset_folder
     os.environ["CONFIG_FILE"] = config_file
@@ -97,9 +98,6 @@ def predict(dataset, dataset_path, data_file, experiment,
 
     os.environ["TEST_DATA_PATH"] = data_path
 
-    # Use overrides to train on CPU.
-    overrides = json.dumps({"trainer": {"cuda_device": str(cuda_device)}})
-
     # Assemble the command into sys.argv
     run_predict = [
         "allennlp",  # command name, not used by main
@@ -126,7 +124,7 @@ def gen_metric(dataset, dataset_path, data_file, output_dir):
     output_base_path = output_dir
 
     metrics = [
-        "python3", 
+        "python3",
         "eraserbenchmark/rationale_benchmark/metrics.py",
         "--data_dir", dataset_folder,
         "--split", data_file,
@@ -138,8 +136,6 @@ def gen_metric(dataset, dataset_path, data_file, output_dir):
 
     print(metrics)
     subprocess.run(metrics)
-
-
 
 
 if __name__ == '__main__':
