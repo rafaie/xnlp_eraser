@@ -28,11 +28,12 @@ DEFAULT_PREDICT_BATCH_SIZE = 4
 DEFAULT_EXP_NAME = 'test_1'
 DEFAULT_RS_WEIGHT = 1
 DEFAULT_CLASSIFIER = 'base_2docs_model'
+DEFAULT_LOSS_MODE = 'all'
 
 
 def train(dataset, config_file, dataset_path, experiment,
           train_file, dev_file, test_file, output_path, seed, exp_name,
-          cuda_device, batch_size, rs_weight):
+          cuda_device, batch_size, rs_weight, loss_mode):
     dataset_folder = os.path.join(dataset_path, dataset)  # "./data/cose/"
     train_data_path = os.path.join(
         dataset_folder, train_file)  # "./data/cose/val.jsonl"
@@ -58,6 +59,7 @@ def train(dataset, config_file, dataset_path, experiment,
     os.environ["BATCH_SIZE"] = str(batch_size)
     os.environ["exp_name"] = exp_name
     os.environ["rs_weight"] = str(rs_weight)
+    os.environ["LOSS_MODE"] = str(loss_mode)
 
     # Use overrides to train on CPU.
     # overrides = json.dumps({"trainer": {"cuda_device": str(cuda_device)}})
@@ -246,6 +248,12 @@ if __name__ == '__main__':
                         action='store_true',
                         help="predict_only. default: False")
 
+    parser.add_argument("--loss_mode",
+                        dest="loss_mode",
+                        type=str,
+                        default=DEFAULT_LOSS_MODE,
+                        help="loss_mode. default: all")
+
     args = parser.parse_args()
     output_base_path = None
 
@@ -262,7 +270,8 @@ if __name__ == '__main__':
                                      exp_name=args.exp_name,
                                      cuda_device=args.cuda_device,
                                      batch_size=args.batch_size,
-                                     rs_weight=args.rs_weight)
+                                     rs_weight=args.rs_weight,
+                                     loss_mode=args.loss_mode)
 
     if args.train_only is False:
         if output_base_path is None:

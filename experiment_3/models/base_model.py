@@ -7,11 +7,16 @@ from allennlp.training.metrics import FBetaMeasure, CategoricalAccuracy
 
 
 class BaseModel(Model):
+    LOSS_MODE_ALL = 'all'
+    LOSS_MODE_RATIONALE_ONLY = 'rationale_only'
+    LOSS_MODE_OBJECTIVE_ONLY = 'objective_only'
+
     def __init__(
         self,
         vocab: Vocabulary,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
+        loss_mode: str=LOSS_MODE_ALL
     ):
         super(BaseModel, self).__init__(vocab, regularizer)
         self._vocabulary = vocab
@@ -19,6 +24,7 @@ class BaseModel(Model):
         self._accuracy = CategoricalAccuracy()
 
         self.prediction_mode = False
+        self.loss_mode = loss_mode
 
         initializer(self)
 

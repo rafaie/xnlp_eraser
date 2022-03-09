@@ -27,9 +27,11 @@ class Base2DocsModel(BaseModel):
         rationale_supervision_loss_weight: float = 1.0,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
+        loss_mode: str = BaseModel.LOSS_MODE_ALL
     ):
 
-        super(Base2DocsModel, self).__init__(vocab, initializer, regularizer)
+        super(Base2DocsModel, self).__init__(
+            vocab, initializer, regularizer, loss_mode)
         self._vocabulary = vocab
         self._num_labels = self._vocabulary.get_vocab_size("labels")
 
@@ -89,7 +91,8 @@ class Base2DocsModel(BaseModel):
             assert "loss" in objective_dict
 
             loss_sample = objective_dict["loss"]  # (B,)
-            loss += loss_sample.mean()
+            if self.loss_mode != BaseModel.LOSS_MODE_RATIONALE_ONLY:
+                loss += loss_sample.mean()
 
             # Permise
             premise_lasso_loss = util.masked_mean(
@@ -146,11 +149,13 @@ class Base2DocsModel(BaseModel):
 
             self._loss_tracks["base_loss"](loss_sample.mean().item())
 
-            loss += self._reinforce_loss_weight * premise_generator_loss.mean() +  \
-                self._reinforce_loss_weight * query_generator_loss_mean
+            if self.loss_mode != BaseModel.LOSS_MODE_OBJECTIVE_ONLY:
+                loss += self._reinforce_loss_weight * premise_generator_loss.mean() +  \
+                    self._reinforce_loss_weight * query_generator_loss_mean
 
         output_dict = rationale_dict
-        loss += self._rationale_supervision_loss_weight * \
+        if self.loss_mode != BaseModel.LOSS_MODE_OBJECTIVE_ONLY:
+            loss += self._rationale_supervision_loss_weight * \
             rationale_dict.get("rationale_supervision_loss", 0.0)
 
         output_dict["logits"] = objective_dict["logits"]

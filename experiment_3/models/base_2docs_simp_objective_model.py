@@ -27,10 +27,11 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         rationale_supervision_loss_weight: float = 1.0,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
+        loss_mode: str = BaseModel.LOSS_MODE_ALL
     ):
 
         super(Base2DocsSimpObjectiveModel, self).__init__(
-            vocab, initializer, regularizer)
+            vocab, initializer, regularizer, loss_mode)
         self._vocabulary = vocab
         self._num_labels = self._vocabulary.get_vocab_size("labels")
 
@@ -48,8 +49,7 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         self._reinforce_loss_weight = reinforce_loss_weight
         self._rationale_supervision_loss_weight = rationale_supervision_loss_weight
         self._loss_tracks = {
-            k: Average() for k in ["lasso_loss", "fused_lasso_loss",
-                                   "base_loss"]}
+            k: Average() for k in ["lasso_loss", "fused_lasso_loss", "base_loss"]}
 
         initializer(self)
 
@@ -71,16 +71,18 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         sampler = D.bernoulli.Bernoulli(probs=prob_z)
 
         sample_z = sampler.sample() * mask.float()
-        encoder_dict = self._objective_model(
+        objective_dict = self._objective_model(
             sample_z=sample_z, label=label, metadata=metadata)
 
         loss = 0.0
 
         if label is not None:
-            assert "loss" in encoder_dict
+            assert "loss" in objective_dict
 
-            loss_sample = encoder_dict["loss"]  # (B,)
-            loss += loss_sample.mean()
+            loss_sample = objective_dict["loss"]  # (B,)
+
+            if self.loss_mode != BaseModel.LOSS_MODE_RATIONALE_ONLY:
+                loss += loss_sample.mean()
 
             lasso_loss = util.masked_mean(sample_z, mask, dim=-1)  # (B,)
 
@@ -105,17 +107,19 @@ class Base2DocsSimpObjectiveModel(BaseModel):
                 (self._reg_loss_mu * self._reg_loss_lambda)
             ) * log_prob_z_sum
 
-            loss += self._reinforce_loss_weight * generator_loss.mean()
+            if self.loss_mode != BaseModel.LOSS_MODE_OBJECTIVE_ONLY:
+                loss += self._reinforce_loss_weight * generator_loss.mean()
 
         output_dict = rationale_dict
-        loss += self._rationale_supervision_loss_weight * \
-            rationale_dict.get("rationale_supervision_loss", 0.0)
+        if self.loss_mode != BaseModel.LOSS_MODE_OBJECTIVE_ONLY:
+            loss += self._rationale_supervision_loss_weight * \
+                rationale_dict.get("rationale_supervision_loss", 0.0)
 
-        output_dict["logits"] = encoder_dict["logits"]
-        output_dict['probs'] = encoder_dict['probs']
-        output_dict["class_probs"] = encoder_dict["class_probs"]
-        output_dict["predicted_labels"] = encoder_dict["predicted_labels"]
-        output_dict["gold_labels"] = encoder_dict["gold_labels"]
+        output_dict["logits"] = objective_dict["logits"]
+        output_dict['probs'] = objective_dict['probs']
+        output_dict["class_probs"] = objective_dict["class_probs"]
+        output_dict["predicted_labels"] = objective_dict["predicted_labels"]
+        output_dict["gold_labels"] = objective_dict["gold_labels"]
 
         output_dict["loss"] = loss
         output_dict["metadata"] = metadata
@@ -168,7 +172,7 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         output_labels = self._vocabulary.get_index_to_token_vocabulary(
             "labels")
         if ('A' in list(output_labels.values()) and len(list(output_labels.values())) == 5) or \
-            len(list(output_labels.values())) == 0:
+                len(list(output_labels.values())) == 0:
             output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
         new_output_dict["annotation_id"] = [m["annotation_id"]

@@ -102,7 +102,8 @@
     reg_loss_lambda: 0.01,
     reg_loss_mu: 2.0,
     reinforce_loss_weight: 1.0,
-    rationale_supervision_loss_weight: std.parseInt(std.extVar('rs_weight'))
+    rationale_supervision_loss_weight: std.parseInt(std.extVar('rs_weight')),
+    loss_mode:std.extVar('LOSS_MODE')
   },
   trainer: {
     num_epochs: 20,
