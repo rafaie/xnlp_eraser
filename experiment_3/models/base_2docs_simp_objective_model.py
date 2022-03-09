@@ -29,7 +29,8 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         regularizer: Optional[RegularizerApplicator] = None,
     ):
 
-        super(Base2DocsSimpObjectiveModel, self).__init__(vocab, initializer, regularizer)
+        super(Base2DocsSimpObjectiveModel, self).__init__(
+            vocab, initializer, regularizer)
         self._vocabulary = vocab
         self._num_labels = self._vocabulary.get_vocab_size("labels")
 
@@ -48,7 +49,7 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         self._rationale_supervision_loss_weight = rationale_supervision_loss_weight
         self._loss_tracks = {
             k: Average() for k in ["lasso_loss", "fused_lasso_loss",
-                                    "base_loss"]}
+                                   "base_loss"]}
 
         initializer(self)
 
@@ -58,7 +59,6 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         rationale_dict = self._rationale_model(
             document, premise, query, rationale)
         assert "prob_z" in rationale_dict
-
 
         mask = rationale_dict["mask"]
         mask = mask[:, :kept_tokens.shape[1]]
@@ -71,7 +71,8 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         sampler = D.bernoulli.Bernoulli(probs=prob_z)
 
         sample_z = sampler.sample() * mask.float()
-        encoder_dict = self._objective_model(sample_z=sample_z, label=label, metadata=metadata)
+        encoder_dict = self._objective_model(
+            sample_z=sample_z, label=label, metadata=metadata)
 
         loss = 0.0
 
@@ -89,22 +90,26 @@ class Base2DocsSimpObjectiveModel(BaseModel):
             fused_lasso_loss = masked_diff / masked_sum
 
             self._loss_tracks["lasso_loss"](lasso_loss.mean().item())
-            self._loss_tracks["fused_lasso_loss"](fused_lasso_loss.mean().item())
+            self._loss_tracks["fused_lasso_loss"](
+                fused_lasso_loss.mean().item())
             self._loss_tracks["base_loss"](loss_sample.mean().item())
 
-            log_prob_z = torch.log(1 + torch.exp(sampler.log_prob(sample_z)))  # (B, L)
+            log_prob_z = torch.log(
+                1 + torch.exp(sampler.log_prob(sample_z)))  # (B, L)
             log_prob_z_sum = (mask * log_prob_z).mean(-1)  # (B,)
 
             generator_loss = (
                 loss_sample.detach()
                 + lasso_loss * self._reg_loss_lambda
-                + fused_lasso_loss * (self._reg_loss_mu * self._reg_loss_lambda)
+                + fused_lasso_loss *
+                (self._reg_loss_mu * self._reg_loss_lambda)
             ) * log_prob_z_sum
 
             loss += self._reinforce_loss_weight * generator_loss.mean()
 
         output_dict = rationale_dict
-        loss += self._rationale_supervision_loss_weight * rationale_dict.get("rationale_supervision_loss", 0.0)
+        loss += self._rationale_supervision_loss_weight * \
+            rationale_dict.get("rationale_supervision_loss", 0.0)
 
         output_dict["logits"] = encoder_dict["logits"]
         output_dict['probs'] = encoder_dict['probs']
@@ -123,10 +128,12 @@ class Base2DocsSimpObjectiveModel(BaseModel):
     def _decode(self, output_dict) -> Dict[str, Any]:
         new_output_dict = {}
 
-        output_dict["predicted_labels"] = output_dict["predicted_labels"].cpu().data.numpy()
+        output_dict["predicted_labels"] = output_dict["predicted_labels"].cpu(
+        ).data.numpy()
 
         masks = output_dict["mask"].float().cpu().data.numpy()
-        predicted_rationales = output_dict["predicted_rationale"].cpu().data.numpy()
+        predicted_rationales = output_dict["predicted_rationale"].cpu(
+        ).data.numpy()
         metadata = output_dict["metadata"]
         soft_scores = output_dict["prob_z"].cpu().data.numpy()
 
@@ -158,10 +165,16 @@ class Base2DocsSimpObjectiveModel(BaseModel):
 
             new_output_dict["rationales"].append(document_rationale)
 
-        output_labels = self._vocabulary.get_index_to_token_vocabulary("labels")
+        output_labels = self._vocabulary.get_index_to_token_vocabulary(
+            "labels")
+        if ('A' in list(output_labels.values()) and len(list(output_labels.values())) == 5) or \
+            len(list(output_labels.values())) == 0:
+            output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
 
-        new_output_dict["annotation_id"] = [m["annotation_id"] for m in metadata]
-        new_output_dict["classification"] = [output_labels[int(p)] for p in output_dict["predicted_labels"]]
+        new_output_dict["annotation_id"] = [m["annotation_id"]
+                                            for m in metadata]
+        new_output_dict["classification"] = [
+            output_labels[int(p)] for p in output_dict["predicted_labels"]]
 
         _output_labels = [output_labels[i] for i in range(self._num_labels)]
         new_output_dict["classification_scores"] = [
@@ -171,10 +184,13 @@ class Base2DocsSimpObjectiveModel(BaseModel):
         return new_output_dict
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        base_metrics = super(Base2DocsSimpObjectiveModel, self).get_metrics(reset)
+        base_metrics = super(Base2DocsSimpObjectiveModel,
+                             self).get_metrics(reset)
 
-        loss_metrics = {"_total" + k: v._total_value for k, v in self._loss_tracks.items()}
-        loss_metrics.update({k: v.get_metric(reset) for k, v in self._loss_tracks.items()})
+        loss_metrics = {"_total" + k: v._total_value for k,
+                        v in self._loss_tracks.items()}
+        loss_metrics.update({k: v.get_metric(reset)
+                            for k, v in self._loss_tracks.items()})
         loss_metrics.update(base_metrics)
         loss_metrics.update(self._rationale_model.get_metrics(reset))
 
