@@ -19,7 +19,7 @@ class BaseModel(Model):
         self._accuracy = CategoricalAccuracy()
 
         self.prediction_mode = False
-        
+
         initializer(self)
 
     def forward(self, document, sentence_indices, query=None, labels=None, metadata=None):
@@ -29,14 +29,15 @@ class BaseModel(Model):
         output_dict = self._decode(output_dict)
         return output_dict
 
-    def _call_metrics(self, output_dict) :
+    def _call_metrics(self, output_dict):
         self._f1_metric(output_dict['logits'], output_dict['gold_labels'])
         self._accuracy(output_dict['logits'], output_dict['gold_labels'])
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         metrics = self._f1_metric.get_metric(reset)
-        output_labels = self._vocabulary.get_index_to_token_vocabulary("labels")
-        if len(output_labels) == 0: # COSE
+        output_labels = self._vocabulary.get_index_to_token_vocabulary(
+            "labels")
+        if len(output_labels) == 0:  # COSE
             output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
         output_labels = [output_labels[i] for i in range(len(output_labels))]
 
@@ -44,24 +45,24 @@ class BaseModel(Model):
         for k, v in metrics.items():
             assert len(v) == len(output_labels)
             class_nums = dict(zip(output_labels, v))
-            class_metrics.update({k + "_" + str(kc): x for kc, x in class_nums.items()})
+            class_metrics.update(
+                {k + "_" + str(kc): x for kc, x in class_nums.items()})
 
         class_metrics.update({"accuracy": self._accuracy.get_metric(reset)})
         modified_class_metrics = {}
 
-        for k, v in class_metrics.items() :
+        for k, v in class_metrics.items():
             if k.endswith('_1') or k == 'accuracy':
                 modified_class_metrics[k] = v
-            else :
+            else:
                 modified_class_metrics['_' + k] = v
 
         return modified_class_metrics
 
-    def normalize_attentions(self, output_dict) :
+    def normalize_attentions(self, output_dict):
         '''
         In case, attention is over subtokens rather than at token level. 
         Combine subtoken attention into token attention.
         '''
 
         return output_dict
-
