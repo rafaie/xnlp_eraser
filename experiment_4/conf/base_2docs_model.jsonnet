@@ -67,6 +67,13 @@
         type: 'pass_through',
         input_dim: 256
       },
+      aggregation_layer : {
+        type: 'lstm',
+        input_size: 256,
+        hidden_size: 128,
+        num_layers: 2,
+        bidirectional: true
+      },
     },
     objective_model_params : {
       type: "objective_2docs_model",

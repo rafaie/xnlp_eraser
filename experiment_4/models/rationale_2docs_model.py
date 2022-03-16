@@ -22,6 +22,7 @@ class Rationale2DocsModel(Model):
         query_seq2seq_encoder: Seq2SeqEncoder,
         premise_feedforward_encoder: Seq2SeqEncoder,
         query_feedforward_encoder: Seq2SeqEncoder,
+        aggregation_layer:Seq2SeqEncoder=None,
         dropout: float = 0.0,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
@@ -39,7 +40,11 @@ class Rationale2DocsModel(Model):
         self._premise_feedforward_encoder = premise_feedforward_encoder
         self._query_feedforward_encoder = query_feedforward_encoder
         # + query_feedforward_encoder.get_output_dim()
+        self._aggregation_layer = aggregation_layer
+
         self._classifier_input_dim = premise_feedforward_encoder.get_output_dim()
+        if self._aggregation_layer is not None:
+            self._classifier_input_dim = aggregation_layer.get_output_dim()
 
         self._classification_layer = torch.nn.Linear(
             self._classifier_input_dim, 1)
@@ -71,6 +76,11 @@ class Rationale2DocsModel(Model):
 
         embedded_text = torch.cat(
             (premise_embedded_text, query_embedded_text), 1)
+
+        if self._aggregation_layer is not None:
+            embedded_text_mask = torch.cat((premise_mask, query_mask), 1)
+            embedded_text = self._aggregation_layer(embedded_text, embedded_text_mask)
+
         logits = self._classification_layer(embedded_text).squeeze(-1)
         probs = torch.sigmoid(logits)
 
