@@ -53,7 +53,7 @@ class SimpleModel(BaseModel):
                 kept_tokens, premise_kept_tokens, query_kept_tokens,
                 rationale=None, label=None, metadata=None) -> Dict[str, Any]:
         embedded_text = self._doc_field_embedder(document)
-        mask = util.get_text_field_mask(premise).float()
+        mask = util.get_text_field_mask(document).float()
 
         embedded_text = self._aggregation_layer(embedded_text, mask=mask)
         embedded_text = self._feedforward_encoder(embedded_text.sum(1))
