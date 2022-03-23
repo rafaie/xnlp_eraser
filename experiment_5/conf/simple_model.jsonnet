@@ -41,6 +41,11 @@
       num_layers: 2,
       bidirectional: true
     },
+    attention: {
+      type: 'additive',
+      vector_dim: 512,
+      matrix_dim: 512,
+    },
     feedforward_encoder:{
         input_dim: 512,
         num_layers: 2,

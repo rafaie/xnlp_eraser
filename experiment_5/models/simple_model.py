@@ -23,6 +23,7 @@ class SimpleModel(BaseModel):
         doc_field_embedder: TextFieldEmbedder,
         aggregation_layer:Seq2SeqEncoder,
         feedforward_encoder:FeedForward,
+        attention: Attention,
         dropout: float = 0.0,
         initializer: InitializerApplicator = InitializerApplicator(),
         regularizer: Optional[RegularizerApplicator] = None,
@@ -43,6 +44,8 @@ class SimpleModel(BaseModel):
             self._feedforward_encoder.get_output_dim(),
             self._num_labels)
 
+        self._attention = attention
+        self._vector = torch.nn.Parameter(torch.randn((1, self._aggregation_layer.get_output_dim())))
 
         self._loss_tracks = {
             k: Average() for k in ["base_loss"]}
@@ -56,6 +59,10 @@ class SimpleModel(BaseModel):
         mask = util.get_text_field_mask(document).float()
 
         embedded_text = self._aggregation_layer(embedded_text, mask=mask)
+
+        attentions = self._attention(vector=self._vector, matrix=embedded_text, matrix_mask=mask)
+        embedded_text = embedded_text * attentions.unsqueeze(-1) * mask.unsqueeze(-1)
+
         embedded_text = self._feedforward_encoder(embedded_text.sum(1))
         embedded_text = self._dropout(embedded_text)
 
