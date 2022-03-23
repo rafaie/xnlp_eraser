@@ -59,14 +59,14 @@ class SimpleModel2(BaseModel):
         document = self._regenerate_tokens_with_labels(metadata=metadata, labels=label)
         embedded_text = self._doc_field_embedder(document)
         mask = util.get_text_field_mask(document).float()
-
+        embedded_text = self._dropout(embedded_text)
         embedded_text = self._aggregation_layer(embedded_text, mask=mask)
 
         attentions = self._attention(vector=self._vector, matrix=embedded_text, matrix_mask=mask)
         embedded_text = embedded_text * attentions.unsqueeze(-1) * mask.unsqueeze(-1)
 
         embedded_text = self._feedforward_encoder(embedded_text.sum(1))
-        embedded_text = self._dropout(embedded_text)
+
 
         logits = self._classification_layer(embedded_text)
         b = logits.shape[0] // 5

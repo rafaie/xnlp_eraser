@@ -38,7 +38,7 @@
       type: 'lstm',
       input_size: 768,
       hidden_size: 256,
-      num_layers: 2,
+      num_layers: 1,
       bidirectional: true
     },
     attention: {
