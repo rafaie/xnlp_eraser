@@ -182,5 +182,8 @@ class RationaleReader2Docs(DatasetReader):
 
         return Instance(fields)
 
-    def convert_tokens_to_instance(self, tokens, labels=None):
-        return [Instance({"document": TextField(tokens, self._token_indexers)})]
+    # def convert_tokens_to_instance(self, tokens, labels=None):
+    #     return [Instance({"document": TextField(tokens, self._token_indexers)})]
+
+    def convert_tokens_to_instance(self, tokens, labels:List[str] = None):
+        return [Instance({"document": TextField(tokens + [Token(l)], self._token_indexers)}) for l in labels]
