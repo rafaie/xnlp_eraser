@@ -25,7 +25,7 @@
   validation_data_path: std.extVar('DEV_DATA_PATH'),
   test_data_path: std.extVar('TEST_DATA_PATH'),
   model: {
-    type: "simple_model3",
+    type: "simple_model",
     doc_field_embedder:{
       token_embedders: {
         bert: {
