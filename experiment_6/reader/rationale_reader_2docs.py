@@ -127,6 +127,7 @@ class RationaleReader2Docs(DatasetReader):
             is_evidence += rationale + [1]
 
         if query is not None and type(query) != list:
+            query = query.replace('[sep]', '[SEP]')
             query_words = query.split()
             tokens += [Token(word) for word in query_words]
             query_tokens += [Token(word) for word in query_words]
@@ -174,7 +175,7 @@ class RationaleReader2Docs(DatasetReader):
 
         if label is not None:
             if self.ds_type == COSE_DATASET:
-                query = query.split("[sep]")
+                query = query.split("[SEP]")
                 query = [x.strip() for x in query]
                 fields["label"] = MetadataField({k: v for k, v in zip(
                     ["A", "B", "C", "D", "E", "Label"], query + [label])})
