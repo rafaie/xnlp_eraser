@@ -1,6 +1,6 @@
 {
   dataset_reader : {
-    type : "rationale_reader_2docs",
+    type : "rationale_reader_cose",
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
@@ -9,7 +9,7 @@
     },
   },
   validation_dataset_reader: {
-    type : "rationale_reader_2docs",
+    type : "rationale_reader_cose",
     token_indexers : {
       bert : {
         type : "pretrained_transformer",

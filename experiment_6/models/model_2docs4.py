@@ -57,9 +57,10 @@ class Model2Docs4(BaseModel):
 
         initializer(self)
 
-    def forward(self, document, premise, query,
-                kept_tokens, premise_kept_tokens, query_kept_tokens,
-                rationale=None, label=None, metadata=None) -> Dict[str, Any]:
+    # def forward(self, document, premise, query,
+    #             kept_tokens, premise_kept_tokens, query_kept_tokens,
+    #             rationale=None, label=None, metadata=None) -> Dict[str, Any]:
+    def forward(self, document, kept_tokens, rationale=None, label=None, metadata=None) -> Dict[str, Any]:
 
         premise = self._regenerate_tokens_with_labels(
             metadata=metadata, labels=label)
@@ -136,7 +137,7 @@ class Model2Docs4(BaseModel):
 
     def _regenerate_tokens_with_labels(self, metadata, labels):
         # sample_z_cpu = sample_z.cpu().data.numpy()
-        tokens = [m["query_tokens"] for m in metadata]
+        tokens = [m["tokens"] for m in metadata]
 
         # assert len(tokens) == len(sample_z_cpu)
         # assert max([len(x) for x in tokens]) == sample_z_cpu.shape[1]
@@ -168,7 +169,7 @@ class Model2Docs4(BaseModel):
         instances = []
         new_tokens = []
 
-        tokens = [m["query_tokens"] for m in metadata]
+        tokens = [m["tokens"] for m in metadata]
 
         instances = []
         new_tokens = []
