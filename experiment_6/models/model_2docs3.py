@@ -6,13 +6,13 @@ import torch.nn.functional as F
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator, util
+from zmq import device
 from .base_model import BaseModel
 from allennlp.modules import Seq2SeqEncoder, TextFieldEmbedder, FeedForward
 from allennlp.modules.attention import Attention
 
 from allennlp.data.batch import Batch
 from allennlp.training.metrics import Average
-
 
 
 @Model.register("model_2docs3")
@@ -23,7 +23,7 @@ class Model2Docs3(BaseModel):
         premise_field_embedder: TextFieldEmbedder,
         query_field_embedder: TextFieldEmbedder,
         seq2seq_encoder: Seq2SeqEncoder,
-        feedforward_encoder:FeedForward,
+        feedforward_encoder: FeedForward,
         attention: Attention,
         dropout: float = 0.0,
         initializer: InitializerApplicator = InitializerApplicator(),
@@ -35,7 +35,7 @@ class Model2Docs3(BaseModel):
 
         self._num_labels = self._vocabulary.get_vocab_size("labels")
         if self._num_labels == 0:
-            self._num_labels = 5 # for COSE
+            self._num_labels = 5  # for COSE
 
         self._premise_field_embedder = premise_field_embedder
         self._query_field_embedder = query_field_embedder
@@ -46,9 +46,11 @@ class Model2Docs3(BaseModel):
         self._feedforward_encoder = feedforward_encoder
 
         self._classifier_input_dim = self._feedforward_encoder.get_output_dim()
-        self._classification_layer = torch.nn.Linear(self._classifier_input_dim, 1)
+        self._classification_layer = torch.nn.Linear(
+            self._classifier_input_dim, 1)
 
-        self._vector = torch.nn.Parameter(torch.randn((1, self._seq2seq_encoder.get_output_dim())))
+        self._vector = torch.nn.Parameter(torch.randn(
+            (1, self._seq2seq_encoder.get_output_dim())))
 
         self._loss_tracks = {
             k: Average() for k in ["base_loss"]}
@@ -59,7 +61,8 @@ class Model2Docs3(BaseModel):
                 kept_tokens, premise_kept_tokens, query_kept_tokens,
                 rationale=None, label=None, metadata=None) -> Dict[str, Any]:
 
-        premise = self._regenerate_tokens_with_labels(metadata=metadata, labels=label)
+        premise = self._regenerate_tokens_with_labels(
+            metadata=metadata, labels=label)
         premise_text = self._premise_field_embedder(premise)
         premise_mask = util.get_text_field_mask(premise).float()
 
@@ -77,12 +80,13 @@ class Model2Docs3(BaseModel):
             query_len = int(query_mask[i].sum().item())
             a = torch.cat((premise_text[i][:prem_len],
                            query_text[i][:query_len],
-                           torch.zeros(str_len - prem_len - query_len, premise_text.shape[-1])
+                           torch.zeros(str_len - prem_len - query_len,
+                                       premise_text.shape[-1], device=premise_text.device)
                            )).unsqueeze(0)
             m = torch.cat((
-                    torch.ones(prem_len + query_len),
-                    torch.zeros(str_len - prem_len - query_len)
-                           )).unsqueeze(0)
+                torch.ones(prem_len + query_len, device=premise_text.device),
+                torch.zeros(str_len - prem_len - query_len, device=premise_text.device)
+            )).unsqueeze(0)
             if embedded_text == None:
                 embedded_text = a
                 mask = m
@@ -93,10 +97,13 @@ class Model2Docs3(BaseModel):
         # embedded_text = torch.cat((premise_text, query_text), 1)
         # mask = torch.cat((premise_mask, query_mask), 1)
 
-        embedded_text = self._dropout(self._seq2seq_encoder(embedded_text, mask=mask))
-        attentions = self._attention(vector=self._vector, matrix=embedded_text, matrix_mask=mask)
+        embedded_text = self._dropout(
+            self._seq2seq_encoder(embedded_text, mask=mask))
+        attentions = self._attention(
+            vector=self._vector, matrix=embedded_text, matrix_mask=mask)
 
-        embedded_text = embedded_text * attentions.unsqueeze(-1) * mask.unsqueeze(-1)
+        embedded_text = embedded_text * \
+            attentions.unsqueeze(-1) * mask.unsqueeze(-1)
         embedded_vec = self._feedforward_encoder(embedded_text.sum(1))
 
         logits = self._classification_layer(embedded_vec)
@@ -142,11 +149,12 @@ class Model2Docs3(BaseModel):
 
             new_tokens.append(new_words)
             meta["new_tokens"] = new_tokens
-            try :
+            try:
                 instances += metadata[0]["convert_tokens_to_instance"](
-                    new_words, [instance_labels[k] for k in ["A", "B", "C", "D", "E"]]
+                    new_words, [instance_labels[k]
+                                for k in ["A", "B", "C", "D", "E"]]
                 )
-            except :
+            except:
                 breakpoint()
 
         batch = Batch(instances)
@@ -169,11 +177,11 @@ class Model2Docs3(BaseModel):
 
             new_tokens.append(new_words)
             meta["new_tokens"] = new_tokens
-            try :
+            try:
                 instances += metadata[0]["convert_tokens_to_instance"](
                     [], [instance_labels[k] for k in ["A", "B", "C", "D", "E"]]
                 )
-            except :
+            except:
                 breakpoint()
 
         batch = Batch(instances)
