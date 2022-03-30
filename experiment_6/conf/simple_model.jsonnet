@@ -37,15 +37,15 @@
     seq2seq_encoder : {
       type: 'lstm',
       input_size: 768,
-      hidden_size: 256,
+      hidden_size: 128,
       num_layers: 1,
       bidirectional: true
     },
     dropout: 0.2,
     attention: {
       type: 'additive',
-      vector_dim: 512,
-      matrix_dim: 512,
+      vector_dim: 256,
+      matrix_dim: 256,
     },
     feedforward_encoder:{
       input_dim: 256,
