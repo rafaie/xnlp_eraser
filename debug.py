@@ -81,6 +81,57 @@ def train(dataset, config_file, dataset_path, experiment,
 
     return dt, output_base_path
 
+def find_lr(dataset, config_file, dataset_path, experiment,
+          train_file, dev_file, test_file, output_path, seed, exp_name,
+          cuda_device, batch_size, rs_weight, loss_mode):
+    dataset_folder = os.path.join(dataset_path, dataset)  # "./data/cose/"
+    train_data_path = os.path.join(
+        dataset_folder, train_file)  # "./data/cose/val.jsonl"
+    dev_data_path = os.path.join(
+        dataset_folder, dev_file)  # "./data/cose/val.jsonl"
+    test_data_path = os.path.join(
+        dataset_folder, test_file)  # "./data/cose/test.jsonl"
+    now = datetime.now()
+    config_name = os.path.basename(config_file).split('.')[0]
+    dt = now.strftime("%Y_%m_%d_%H_%M_%S")
+    # "experiment_3/output/cose/"
+    output_base_path = os.path.join(
+        experiment, output_path, dataset, config_name, dt)
+
+    os.environ["data_base_path"] = dataset_folder
+    os.environ["CONFIG_FILE"] = config_file
+    os.environ["TRAIN_DATA_PATH"] = train_data_path
+    os.environ["DEV_DATA_PATH"] = dev_data_path
+    os.environ["TEST_DATA_PATH"] = test_data_path
+    os.environ["OUTPUT_BASE_PATH"] = output_base_path
+    os.environ["CUDA_DEVICE"] = str(cuda_device)
+    os.environ["SEED"] = str(seed)
+    os.environ["BATCH_SIZE"] = str(batch_size)
+    os.environ["exp_name"] = exp_name
+    os.environ["rs_weight"] = str(rs_weight)
+    os.environ["LOSS_MODE"] = str(loss_mode)
+
+    # Use overrides to train on CPU.
+    # overrides = json.dumps({"trainer": {"cuda_device": str(cuda_device)}})
+
+    # Assemble the command into sys.argv
+    run_training = [
+        "allennlp",  # command name, not used by main
+        "find-lr",
+        config_file,
+        "-s", output_base_path,
+        "--include-package", experiment,
+        "--num-batches", 500,
+        # "-o", overrides,
+    ]
+
+    # sys.argv = export_cmd + ["&&"] + run_training
+    sys.argv = run_training
+
+    main()
+
+    return dt, output_base_path
+
 
 def predict(dataset, dataset_path, data_file, experiment,
             classifier, output_dir, exp_name, batch_size,
@@ -254,8 +305,30 @@ if __name__ == '__main__':
                         default=DEFAULT_LOSS_MODE,
                         help="loss_mode. default: all")
 
+    parser.add_argument("--find_lr",
+                        dest="find_lr",
+                        action='store_true',
+                        help="find_lr. default: False")
+
     args = parser.parse_args()
     output_base_path = None
+
+    if args.find_lr is True:
+        find_lr(dataset=args.dataset,
+            config_file=args.config,
+            dataset_path=args.dataset_path,
+            experiment=args.experiment,
+            train_file=args.train_file,
+            dev_file=args.dev_file,
+            test_file=args.test_file,
+            output_path=args.output_path,
+            seed=args.seed,
+            exp_name=args.exp_name,
+            cuda_device=args.cuda_device,
+            batch_size=args.batch_size,
+            rs_weight=args.rs_weight,
+            loss_mode=args.loss_mode)
+        quit()
 
     if args.predict_only is False:
         dt, output_base_path = train(dataset=args.dataset,
