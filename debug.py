@@ -29,7 +29,7 @@ DEFAULT_EXP_NAME = 'test_1'
 DEFAULT_RS_WEIGHT = 1
 DEFAULT_CLASSIFIER = 'base_2docs_model'
 DEFAULT_LOSS_MODE = 'all'
-DEFAULT_ATTENTION_CLASS = 'SimpCrossAttention'
+DEFAULT_ATTENTION_CLASS = 'SimpCrossAttentionE'
 
 
 def train(dataset, config_file, dataset_path, experiment,
