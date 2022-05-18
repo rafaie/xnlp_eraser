@@ -29,11 +29,12 @@ DEFAULT_EXP_NAME = 'test_1'
 DEFAULT_RS_WEIGHT = 1
 DEFAULT_CLASSIFIER = 'base_2docs_model'
 DEFAULT_LOSS_MODE = 'all'
+DEFAULT_ATTENTION_CLASS = 'CrossModality'
 
 
 def train(dataset, config_file, dataset_path, experiment,
           train_file, dev_file, test_file, output_path, seed, exp_name,
-          cuda_device, batch_size, rs_weight, loss_mode):
+          cuda_device, batch_size, rs_weight, loss_mode, att_class):
     dataset_folder = os.path.join(dataset_path, dataset)  # "./data/cose/"
     train_data_path = os.path.join(
         dataset_folder, train_file)  # "./data/cose/val.jsonl"
@@ -60,6 +61,7 @@ def train(dataset, config_file, dataset_path, experiment,
     os.environ["exp_name"] = exp_name
     os.environ["rs_weight"] = str(rs_weight)
     os.environ["LOSS_MODE"] = str(loss_mode)
+    os.environ["ATT_CLASS"] = str(att_class)
 
     # Use overrides to train on CPU.
     # overrides = json.dumps({"trainer": {"cuda_device": str(cuda_device)}})
@@ -139,7 +141,7 @@ def find_lr(dataset, config_file, dataset_path, experiment,
 
 def predict(dataset, dataset_path, data_file, experiment,
             classifier, output_dir, exp_name, batch_size,
-            cuda_device):
+            cuda_device, att_class):
     dataset_folder = os.path.join(dataset_path, dataset)  # "./data/cose/"
     # "./data/cose/val.jsonl"
     data_path = os.path.join(dataset_folder, data_file)
@@ -152,6 +154,7 @@ def predict(dataset, dataset_path, data_file, experiment,
     os.environ["exp_name"] = exp_name
     os.environ["BATCH_SIZE"] = str(batch_size)
     os.environ["CUDA_DEVICE"] = str(cuda_device)
+    os.environ["ATT_CLASS"] = str(att_class)
 
     os.environ["TEST_DATA_PATH"] = data_path
 
@@ -314,6 +317,11 @@ if __name__ == '__main__':
                         action='store_true',
                         help="find_lr. default: False")
 
+    parser.add_argument("--att_class",
+                        dest="att_class",
+                        default=DEFAULT_ATTENTION_CLASS,
+                        help="att_class")
+
     args = parser.parse_args()
     output_base_path = None
 
@@ -348,7 +356,8 @@ if __name__ == '__main__':
                                      cuda_device=args.cuda_device,
                                      batch_size=args.batch_size,
                                      rs_weight=args.rs_weight,
-                                     loss_mode=args.loss_mode)
+                                     loss_mode=args.loss_mode,
+                                     att_class=args.att_class)
 
     if args.train_only is False:
         if output_base_path is None:
@@ -362,7 +371,8 @@ if __name__ == '__main__':
                 output_dir=output_base_path,
                 exp_name=args.exp_name,
                 batch_size=args.predict_batch_size,
-                cuda_device=args.cuda_device)
+                cuda_device=args.cuda_device,
+                att_class=args.att_class)
 
         gen_metric(dataset=args.dataset,
                    dataset_path=args.dataset_path,
@@ -377,7 +387,8 @@ if __name__ == '__main__':
                 output_dir=output_base_path,
                 exp_name=args.exp_name,
                 batch_size=args.predict_batch_size,
-                cuda_device=args.cuda_device)
+                cuda_device=args.cuda_device,
+                att_class=args.att_class)
 
         gen_metric(dataset=args.dataset,
                    dataset_path=args.dataset_path,
@@ -392,7 +403,8 @@ if __name__ == '__main__':
                 output_dir=output_base_path,
                 exp_name=args.exp_name,
                 batch_size=args.predict_batch_size,
-                cuda_device=args.cuda_device)
+                cuda_device=args.cuda_device,
+                att_class=args.att_class)
 
         gen_metric(dataset=args.dataset,
                    dataset_path=args.dataset_path,
