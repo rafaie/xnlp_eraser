@@ -1,4 +1,3 @@
-from turtle import forward
 from typing import Optional, Dict, Any
 
 import torch

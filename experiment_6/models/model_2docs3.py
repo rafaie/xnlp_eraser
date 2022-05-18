@@ -136,7 +136,7 @@ class Model2Docs3(BaseModel):
 
     def _regenerate_tokens_with_labels(self, metadata, labels):
         # sample_z_cpu = sample_z.cpu().data.numpy()
-        tokens = [m["query_tokens"] for m in metadata]
+        tokens = [m["tokens"] for m in metadata]
 
         # assert len(tokens) == len(sample_z_cpu)
         # assert max([len(x) for x in tokens]) == sample_z_cpu.shape[1]
