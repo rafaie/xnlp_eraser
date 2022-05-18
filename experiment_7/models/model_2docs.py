@@ -14,6 +14,7 @@ from allennlp.modules.transformer.attention_module import AttentionModule
 
 from allennlp.data.batch import Batch
 from allennlp.training.metrics import Average
+from .attentions import Attentions_dict
 
 import importlib
 import os
@@ -58,9 +59,10 @@ class Model2Docs(BaseModel):
         self._loss_tracks = {
             k: Average() for k in ["base_loss"]}
 
-        m = '.'.join(os.path.dirname(__file__).split(os.sep)[-2:])
-        module_ = importlib.import_module(m + ".attentions")
-        self._attention = getattr(module_, att_class_name)()
+        # m = '.'.join(os.path.dirname(__file__).split(os.sep)[-2:])
+        # module_ = importlib.import_module(m + ".attentions")
+        # self._attention = getattr(module_, att_class_name)()
+        self._attention = Attentions_dict[att_class_name]
 
         initializer(self)
 
