@@ -121,11 +121,15 @@ def find_lr(dataset, config_file, dataset_path, experiment,
         config_file,
         "-s", output_base_path,
         "--include-package", experiment,
-        "--num-batches", 500,
+        "--num-batches", '3000',
+        "--start-lr", "1e-08",
+        "--end-lr", "1e-3",
+        "--linear",
         # "-o", overrides,
     ]
 
     # sys.argv = export_cmd + ["&&"] + run_training
+    print(run_training)
     sys.argv = run_training
 
     main()
