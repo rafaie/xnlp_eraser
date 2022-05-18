@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from allennlp.modules.transformer.attention_module import AttentionModule, SelfAttention
 
 
+
+
 class SimpCrossAttention:
     def __init__(
         self
@@ -89,3 +91,11 @@ class CrossModality:
         att3 = self.self_att3(att3.hidden_states)
 
         return att3
+
+
+
+Attentions_dict = {
+    'SimpCrossAttention': SimpCrossAttention(),
+    'CrossSelfAttention': CrossSelfAttention(),
+    'CrossModality': CrossModality()
+}
