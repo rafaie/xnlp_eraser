@@ -62,7 +62,7 @@ class Model2Docs(BaseModel):
         # m = '.'.join(os.path.dirname(__file__).split(os.sep)[-2:])
         # module_ = importlib.import_module(m + ".attentions")
         # self._attention = getattr(module_, att_class_name)()
-        self._attention = Attentions_dict[att_class_name]
+        self._attention = Attentions_dict[att_class_name](vocab=vocab)
 
         initializer(self)
 

@@ -2,16 +2,19 @@ from typing import Optional, Dict, Any
 
 import torch
 import torch.nn.functional as F
-
+from allennlp.models.model import Model
 from allennlp.modules.transformer.attention_module import AttentionModule, SelfAttention
+from allennlp.data.vocabulary import Vocabulary
+from allennlp.nn import InitializerApplicator, RegularizerApplicator, util
 
-
-
-
-class SimpCrossAttention:
+class SimpCrossAttention(Model):
     def __init__(
-        self
-    ):
+        self,
+        vocab: Vocabulary,
+        initializer: InitializerApplicator = InitializerApplicator()
+        ):
+        super(SimpCrossAttention, self).__init__(
+            vocab, initializer)
         self.cross_att = AttentionModule(
             is_cross_attention=True, is_decoder=True)
 
@@ -25,10 +28,11 @@ class SimpCrossAttention:
         return att
 
 
-class CrossSelfAttention:
+class CrossSelfAttention(Model):
     def __init__(
         self, self_att_dropout: int = 0
     ):
+        super(CrossSelfAttention, self).__init__()
         self.cross_att = AttentionModule(
             is_cross_attention=True, is_decoder=True)
         self.self_att = SelfAttention(hidden_size=self.cross_att.hidden_size,
@@ -47,10 +51,11 @@ class CrossSelfAttention:
         return att
 
 
-class CrossModality:
+class CrossModality(Model):
     def __init__(
         self, self_att_dropout: int = 0
     ):
+        super(CrossModality, self).__init__()
         self.cross_att1 = AttentionModule(
             is_cross_attention=True, is_decoder=True)
         self.cross_att2 = AttentionModule(
@@ -94,7 +99,7 @@ class CrossModality:
 
 
 Attentions_dict = {
-    'SimpCrossAttention': SimpCrossAttention(),
-    'CrossSelfAttention': CrossSelfAttention(),
-    'CrossModality': CrossModality()
+    'SimpCrossAttention': SimpCrossAttention,
+    'CrossSelfAttention': CrossSelfAttention,
+    'CrossModality': CrossModality
 }
