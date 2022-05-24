@@ -87,7 +87,7 @@
     },
     optimizer: {
       type: "adam",
-      lr: 2e-5
+      lr: 5e-6
     },
     callbacks: [
           {

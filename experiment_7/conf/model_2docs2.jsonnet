@@ -1,6 +1,6 @@
 {
   dataset_reader : {
-    type : "rationale_reader_2docs",
+    type : "rationale_reader_cose",
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
@@ -9,7 +9,7 @@
     },
   },
   validation_dataset_reader: {
-    type : "rationale_reader_2docs",
+    type : "rationale_reader_cose",
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
@@ -19,13 +19,18 @@
   },
   data_loader: {
         type: "multiprocess",
-        batch_size: std.parseInt(std.extVar('BATCH_SIZE')),
+        // batch_size: std.parseInt(std.extVar('BATCH_SIZE')),
+        batch_sampler:{
+          type:'bucket',
+          batch_size: std.parseInt(std.extVar('BATCH_SIZE')),
+          // sorting_keys: ['document'],
+        },
     },
   train_data_path: std.extVar('TRAIN_DATA_PATH'),
   validation_data_path: std.extVar('DEV_DATA_PATH'),
   test_data_path: std.extVar('TEST_DATA_PATH'),
   model: {
-    type: "simple_model_2docs",
+    type: "model_2docs",
     premise_field_embedder:{
       token_embedders: {
         bert: {
@@ -57,27 +62,18 @@
       bidirectional: true
     },
     dropout: 0.2,
-    premise_attention: {
-      type: 'additive',
-      vector_dim: 512,
-      matrix_dim: 512,
-    },
-    query_attention: {
-      type: 'additive',
-      vector_dim: 512,
-      matrix_dim: 512,
-    },
+    att_class_name: std.extVar('ATT_CLASS'),
     feedforward_encoder:{
-        input_dim: 512,
-        num_layers: 2,
-        hidden_dims: [256, 128],
-        activations: ['relu', 'relu'],
-        dropout: 0.25
+      input_dim: 512,
+      num_layers: 1,
+      hidden_dims: [128],
+      activations: ['relu'],
+      dropout: 0.2
       },
   },
   trainer: {
     num_epochs: 20,
-    patience: 5,
+    patience: 7,
     grad_norm: 10.0,
     validation_metric: "+accuracy",
     cuda_device: std.parseInt(std.extVar("CUDA_DEVICE")),

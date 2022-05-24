@@ -57,7 +57,7 @@
   },
   trainer: {
     num_epochs: 20,
-    patience: 5,
+    patience: 10,
     grad_norm: 10.0,
     validation_metric: "+accuracy",
     cuda_device: std.parseInt(std.extVar("CUDA_DEVICE")),

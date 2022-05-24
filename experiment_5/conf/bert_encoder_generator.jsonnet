@@ -21,7 +21,12 @@ local is_cose = if std.findSubstr('cose', std.extVar('TRAIN_DATA_PATH')) == [] t
   },
   data_loader: {
         type: "multiprocess",
-        batch_size: 32,
+        //batch_size: 32,
+        batch_sampler:{
+          type:'bucket',
+          batch_size: std.parseInt(std.extVar('BATCH_SIZE')),
+   //       sorting_keys: ['document'],
+        },
     },
   train_data_path: std.extVar('TRAIN_DATA_PATH'),
   validation_data_path: std.extVar('DEV_DATA_PATH'),

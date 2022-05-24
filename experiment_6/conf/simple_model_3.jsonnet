@@ -19,8 +19,12 @@
   },
   data_loader: {
         type: "multiprocess",
-        batch_size: std.parseInt(std.extVar('BATCH_SIZE')),
-    },
+        batch_sampler:{
+          type:'bucket',
+          batch_size: std.parseInt(std.extVar('BATCH_SIZE')),
+  //        sorting_keys: ['document'],
+        },
+  },
   train_data_path: std.extVar('TRAIN_DATA_PATH'),
   validation_data_path: std.extVar('DEV_DATA_PATH'),
   test_data_path: std.extVar('TEST_DATA_PATH'),
@@ -71,8 +75,8 @@
     },
     learning_rate_scheduler: {
       type: "step",
-      step_size: 2,
-      gamma: 0.5
+      step_size: 3,
+      gamma: 0.7
     },
     callbacks: [
           {
