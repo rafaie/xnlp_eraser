@@ -132,6 +132,11 @@ class Objective2Docs(BaseModel):
         class_probs = torch.cat(
             [1 - probs.unsqueeze(-1), probs.unsqueeze(-1)], dim=-1)
 
+        predicted_rationale = (probs > 0.5)[:,:premise_mask2.shape[1]].long()
+        average_rationale_length = util.masked_mean(
+            predicted_rationale, premise_mask2.bool(), dim=-1).mean()
+        self._rationale_length(average_rationale_length.item())
+    
         output_dict = {}
         if rationale is not None:
             max_r = rationale.shape[1]
@@ -156,7 +161,7 @@ class Objective2Docs(BaseModel):
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         m = self._rationale_f1_metric.get_metric(reset)
-        metrics = {"_rationale_" + k: m[k] for k in m}
+        metrics = {"rationale_" + k: m[k] for k in m}
         metrics.update(
             {'_rationale_length': self._rationale_length.get_metric(reset)})
         metrics.update(

@@ -166,6 +166,7 @@ class Model2Docs(BaseModel):
         loss_metrics.update({k: v.get_metric(reset)
                             for k, v in self._loss_tracks.items()})
         loss_metrics.update(base_metrics)
+        loss_metrics.update(self._rationale_model.get_metrics(reset))
 
         return loss_metrics
 
