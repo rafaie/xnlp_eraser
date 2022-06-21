@@ -52,7 +52,7 @@ class Objective2Docs(BaseModel):
         initializer(self)
 
     def forward(self, document, premise_text, premise_mask,
-                query_text, query_mask, label=None, metadata=None) -> Dict[str, Any]:
+                query_text, query_mask, label=None, metadata=None, output_dict=None) -> Dict[str, Any]:
 
         # Process premise
         premise_text = self._premise_dropout(
@@ -91,7 +91,8 @@ class Objective2Docs(BaseModel):
         logits = logits.squeeze(-1)
         probs = torch.nn.Softmax(dim=-1)(logits)
 
-        output_dict = {}
+        if output_dict is None:
+            output_dict = {}
 
         if label is not None:
             if isinstance(label, list):
@@ -100,7 +101,7 @@ class Objective2Docs(BaseModel):
                     [output_labels[l["Label"]] for l in label]).to(logits.device)
             # label = F.one_hot(label, num_classes=self._num_labels)
             loss = F.cross_entropy(logits, label, reduction="none")
-            output_dict["loss"] = loss.mean()
+            output_dict["obj_loss"] = loss.mean()
 
         output_dict["logits"] = logits
         output_dict["probs"] = probs

@@ -72,3 +72,61 @@ class BaseModel(Model):
         '''
 
         return output_dict
+
+    def _decode(self, output_dict) -> Dict[str, Any]:
+        new_output_dict = {}
+
+        output_dict["predicted_labels"] = output_dict["predicted_labels"].cpu(
+        ).data.numpy()
+
+        masks = output_dict["mask"].float().cpu().data.numpy()
+        predicted_rationales = output_dict["predicted_rationale"].cpu(
+        ).data.numpy()
+        metadata = output_dict["metadata"]
+        soft_scores = output_dict["prob_z"].cpu().data.numpy()
+
+        new_output_dict["rationales"] = []
+
+        for rationale, ss, mask, m in zip(predicted_rationales, soft_scores, masks, metadata):
+            rationale = rationale[mask == 1]
+            ss = ss[mask == 1]
+
+            document_to_span_map = m["document_to_span_map"]
+            document_rationale = []
+            for docid, (s, e) in document_to_span_map.items():
+                doc_rationale = list(rationale[s:e]) + [0]
+                starts = []
+                ends = []
+                for i in range(len(doc_rationale) - 1):
+                    if (doc_rationale[i - 1], doc_rationale[i]) == (0, 1):
+                        starts.append(i)
+                    if (doc_rationale[i], doc_rationale[i + 1]) == (1, 0):
+                        ends.append(i + 1)
+
+                spans = zip(starts, ends)
+                document_rationale.append(
+                    {
+                        "docid": docid,
+                        "hard_rationale_predictions": [{"start_token": s, "end_token": e} for s, e in list(spans)],
+                    }
+                )
+
+            new_output_dict["rationales"].append(document_rationale)
+
+        output_labels = self._vocabulary.get_index_to_token_vocabulary(
+            "labels")
+        if ('A' in list(output_labels.values()) and len(list(output_labels.values())) == 5) or \
+                len(list(output_labels.values())) == 0:
+            output_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E'}
+
+        new_output_dict["annotation_id"] = [m["annotation_id"]
+                                            for m in metadata]
+        new_output_dict["classification"] = [
+            output_labels[int(p)] for p in output_dict["predicted_labels"]]
+
+        _output_labels = [output_labels[i] for i in range(self._num_labels)]
+        new_output_dict["classification_scores"] = [
+            dict(zip(_output_labels, list(x))) for x in output_dict["probs"].cpu().data.numpy()
+        ]
+
+        return new_output_dict
