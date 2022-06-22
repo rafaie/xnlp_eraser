@@ -128,7 +128,7 @@ class Objective2Docs(BaseModel):
         premise_mask2 = premise_mask.view(b2, 5, p2_max)
         premise_mask2 = self.get_agg_func(self._agg_func)(premise_mask2, 1)
 
-        probs = torch.sigmoid(logits)
+        probs = torch.sigmoid(logits)[:,:premise_mask2.shape[1]]
         class_probs = torch.cat(
             [1 - probs.unsqueeze(-1), probs.unsqueeze(-1)], dim=-1)
 
