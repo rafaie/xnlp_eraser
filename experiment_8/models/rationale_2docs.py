@@ -156,6 +156,7 @@ class Objective2Docs(BaseModel):
         output_dict["query_logit"] = query_logit
         output_dict["mask"] = premise_mask2[:, :-1]
         output_dict['predicted_rationale'] = predicted_rationale[:, :-1] * premise_mask2[:, :-1]
+        output_dict["prob_z"] = probs[:, :-1] * premise_mask2[:, :-1]
 
         # self._call_metrics(output_dict)
 
