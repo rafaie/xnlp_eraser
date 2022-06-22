@@ -154,9 +154,12 @@ class Objective2Docs(BaseModel):
         output_dict["rat_metadata"] = metadata
         output_dict["premise_logit"] = premise_logit
         output_dict["query_logit"] = query_logit
+
+
         output_dict["mask"] = premise_mask2[:, :-1]
         output_dict['predicted_rationale'] = predicted_rationale[:, :-1] * premise_mask2[:, :-1]
         output_dict["prob_z"] = probs[:, :-1] * premise_mask2[:, :-1]
+        output_dict["premise_prob_z"] = torch.sigmoid(premise_logit)[:,:premise_mask2.shape[1]] * premise_mask
 
         # self._call_metrics(output_dict)
 
