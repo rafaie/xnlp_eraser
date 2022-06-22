@@ -85,7 +85,7 @@ class Model2Docs(BaseModel):
         query_logit = rationaledict['query_logit']
         query_logit = torch.mul(
             query_logit[:, :query_mask.shape[1]], query_mask.bool())
-        query_text = query_logit.unsqueeze(2) * query_text
+        # query_text = query_logit.unsqueeze(2) * query_text # We can't apply it for COSE dataset!
 
         # Call objective model
         objective_dict = self._objective_model(
