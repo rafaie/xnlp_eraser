@@ -136,7 +136,7 @@ class Objective2Docs(BaseModel):
         average_rationale_length = util.masked_mean(
             predicted_rationale, premise_mask2.bool(), dim=-1).mean()
         self._rationale_length(average_rationale_length.item())
-    
+
         output_dict = {}
         if rationale is not None:
             max_r = rationale.shape[1]
@@ -154,6 +154,7 @@ class Objective2Docs(BaseModel):
         output_dict["rat_metadata"] = metadata
         output_dict["premise_logit"] = premise_logit
         output_dict["query_logit"] = query_logit
+        output_dict["mask"] = premise_mask2[:, :-1]
 
         # self._call_metrics(output_dict)
 
@@ -161,7 +162,12 @@ class Objective2Docs(BaseModel):
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         m = self._rationale_f1_metric.get_metric(reset)
-        metrics = {"rationale_" + k: m[k] for k in m}
+        metrics = {}
+        for k in m:
+            if k == 'f1' :
+                metrics["rationale_" + k] = m[k]
+            else:
+                metrics["_rationale_" + k] = m[k]
         metrics.update(
             {'_rationale_length': self._rationale_length.get_metric(reset)})
         metrics.update(
