@@ -62,6 +62,8 @@ class Model2DocsBrn(BaseModel):
 
     def forward(self, document, kept_tokens, rationale=None, label=None, metadata=None) -> Dict[str, Any]:
 
+        device = kept_tokens.device
+
         # Process premise
         premise = self._regenerate_tokens_with_labels(
             metadata=metadata, labels=label)
@@ -80,8 +82,9 @@ class Model2DocsBrn(BaseModel):
         # calculate new tesnor with rationale output
         # premise_logit = rationaledict['premise_logit']
         premise_prob_z = rationaledict["premise_prob_z"]
-        kept_tokens2 = torch.cat((kept_tokens, torch.zeros(kept_tokens.shape[0], premise_text.shape[1] - kept_tokens.shape[1])), 1)
-        kept_tokens2 = kept_tokens2.repeat(1,5).view(premise_prob_z.shape)
+        kept_tokens2 = torch.cat((kept_tokens, torch.zeros(
+            (kept_tokens.shape[0], premise_text.shape[1] - kept_tokens.shape[1]), device=device)), 1)
+        kept_tokens2 = kept_tokens2.repeat(1, 5).view(premise_prob_z.shape)
         premise_prob_z = kept_tokens2.float() + premise_prob_z * (1 - kept_tokens2)
         premise_sampler = D.bernoulli.Bernoulli(probs=premise_prob_z)
         premise_sample_z = premise_sampler.sample() * premise_mask.float()
@@ -98,7 +101,7 @@ class Model2DocsBrn(BaseModel):
 
         # Call objective model
         objective_dict = self._objective_model(
-            document, premise_text, premise_mask, query_text, 
+            document, premise_text, premise_mask, query_text,
             query_mask, label, metadata,
             output_dict=rationaledict)
 
