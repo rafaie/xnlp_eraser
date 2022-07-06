@@ -4,7 +4,7 @@
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
-        model_name : "bert-base-uncased",
+        model_name : "bert-large-uncased",
       },
     },
   },
@@ -13,7 +13,7 @@
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
-        model_name : "bert-base-uncased",
+        model_name : "bert-large-uncased",
       },
     },
   },
@@ -36,7 +36,7 @@
       token_embedders: {
         bert: {
           type: "pretrained_transformer",
-          model_name: 'bert-base-uncased',
+          model_name: 'bert-large-uncased',
         },
       },
     },
@@ -44,7 +44,7 @@
       token_embedders: {
         bert: {
           type: "pretrained_transformer",
-          model_name: 'bert-base-uncased',
+          model_name: 'bert-large-uncased',
         },
       },
     },
