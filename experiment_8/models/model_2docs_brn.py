@@ -21,6 +21,11 @@ from .attentions import Attentions_dict
 import importlib
 import os
 
+TRANSFER_DIRECT = 0
+TRANSFER_VIA_MUL = 1
+TRANSFER_VIA_RESEDUAL = 2
+TRANSFER_VIA_RESEDUAL_MUL = 3
+
 
 @Model.register("model_2docs_brn")
 class Model2DocsBrn(BaseModel):
@@ -32,6 +37,7 @@ class Model2DocsBrn(BaseModel):
         rationale_model_params: Params,
         objective_model_params: Params,
         initializer: InitializerApplicator = InitializerApplicator(),
+        transfer_method: int = TRANSFER_VIA_MUL,
         regularizer: Optional[RegularizerApplicator] = None,
     ):
         super(Model2DocsBrn, self).__init__(
@@ -54,6 +60,8 @@ class Model2DocsBrn(BaseModel):
             vocab=vocab, regularizer=regularizer, initializer=initializer, params=Params(
                 objective_model_params)
         )
+
+        self.transfer_method = transfer_method
 
         self._loss_tracks = {
             k: Average() for k in ["base_loss"]}
@@ -88,7 +96,19 @@ class Model2DocsBrn(BaseModel):
         premise_prob_z = kept_tokens2.float() + premise_prob_z * (1 - kept_tokens2)
         premise_sampler = D.bernoulli.Bernoulli(probs=premise_prob_z)
         premise_sample_z = premise_sampler.sample() * premise_mask.float()
-        premise_text = premise_sample_z.unsqueeze(2) * premise_text
+        # premise_text = premise_sample_z.unsqueeze(2) * premise_text
+        if self.transfer_method == TRANSFER_DIRECT:
+            premise_text = premise_sample_z.unsqueeze(2).repeat(1, 1, premise_text.shape[-1])
+        elif self.transfer_method == TRANSFER_VIA_MUL:
+            premise_text = premise_sample_z.unsqueeze(2) * premise_text
+        elif self.transfer_method == TRANSFER_VIA_RESEDUAL:
+            premise_sample_z = premise_sample_z.unsqueeze(2).repeat(1, 1, premise_text.shape[-1])
+            premise_text = premise_sample_z + premise_text
+        elif self.transfer_method == TRANSFER_VIA_RESEDUAL_MUL:
+            premise_text2 = premise_sample_z.unsqueeze(2) * premise_text
+            premise_text = premise_text2 + premise_text
+        else:
+            raise "not implemented"
 
         # premise_logit = torch.mul(
         #     premise_logit[:, :premise_mask.shape[1]], premise_mask.bool())

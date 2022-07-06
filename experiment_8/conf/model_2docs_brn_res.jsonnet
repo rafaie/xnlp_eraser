@@ -30,7 +30,8 @@
   validation_data_path: std.extVar('DEV_DATA_PATH'),
   test_data_path: std.extVar('TEST_DATA_PATH'),
   model: {
-    type: "model_2docs",
+    type: "model_2docs_brn",
+    transfer_method: 2,
     premise_field_embedder:{
       token_embedders: {
         bert: {

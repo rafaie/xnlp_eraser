@@ -20,6 +20,11 @@ from .attentions import Attentions_dict
 import importlib
 import os
 
+TRANSFER_DIRECT = 0
+TRANSFER_VIA_MUL = 1
+TRANSFER_VIA_RESEDUAL = 2
+TRANSFER_VIA_RESEDUAL_MUL = 3
+
 
 @Model.register("model_2docs")
 class Model2Docs(BaseModel):
@@ -31,6 +36,7 @@ class Model2Docs(BaseModel):
         rationale_model_params: Params,
         objective_model_params: Params,
         initializer: InitializerApplicator = InitializerApplicator(),
+        transfer_method: int = TRANSFER_VIA_MUL,
         regularizer: Optional[RegularizerApplicator] = None,
     ):
         super(Model2Docs, self).__init__(
@@ -53,6 +59,8 @@ class Model2Docs(BaseModel):
             vocab=vocab, regularizer=regularizer, initializer=initializer, params=Params(
                 objective_model_params)
         )
+
+        self.transfer_method = transfer_method
 
         self._loss_tracks = {
             k: Average() for k in ["base_loss"]}
@@ -80,16 +88,27 @@ class Model2Docs(BaseModel):
         premise_logit = rationaledict['premise_logit']
         premise_logit = torch.mul(
             premise_logit[:, :premise_mask.shape[1]], premise_mask.bool())
-        premise_text = premise_logit.unsqueeze(2) * premise_text
+        if self.transfer_method == TRANSFER_DIRECT:
+            premise_text = premise_logit.unsqueeze(2).repeat(1, 1, premise_text.shape[-1])
+        elif self.transfer_method == TRANSFER_VIA_MUL:
+            premise_text = premise_logit.unsqueeze(2) * premise_text
+        elif self.transfer_method == TRANSFER_VIA_RESEDUAL:
+            premise_logit = premise_logit.unsqueeze(2).repeat(1, 1, premise_text.shape[-1])
+            premise_text = premise_logit + premise_text
+        elif self.transfer_method == TRANSFER_VIA_RESEDUAL_MUL:
+            premise_text2 = premise_logit.unsqueeze(2) * premise_text
+            premise_text = premise_text2 + premise_text
+        else:
+            raise "not implemented"
 
-        query_logit = rationaledict['query_logit']
-        query_logit = torch.mul(
-            query_logit[:, :query_mask.shape[1]], query_mask.bool())
+        # query_logit = rationaledict['query_logit']
+        # query_logit = torch.mul(
+        #     query_logit[:, :query_mask.shape[1]], query_mask.bool())
         # query_text = query_logit.unsqueeze(2) * query_text # We can't apply it for COSE dataset!
 
         # Call objective model
         objective_dict = self._objective_model(
-            document, premise_text, premise_mask, query_text, 
+            document, premise_text, premise_mask, query_text,
             query_mask, label, metadata,
             output_dict=rationaledict)
 

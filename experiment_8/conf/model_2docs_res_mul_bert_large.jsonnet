@@ -4,7 +4,7 @@
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
-        model_name : "bert-base-uncased",
+        model_name : "bert-large-uncased",
       },
     },
   },
@@ -13,7 +13,7 @@
     token_indexers : {
       bert : {
         type : "pretrained_transformer",
-        model_name : "bert-base-uncased",
+        model_name : "bert-large-uncased",
       },
     },
   },
@@ -30,12 +30,13 @@
   validation_data_path: std.extVar('DEV_DATA_PATH'),
   test_data_path: std.extVar('TEST_DATA_PATH'),
   model: {
-    type: "model_2docs_brn",
+    type: "model_2docs",
+    transfer_method: 3,
     premise_field_embedder:{
       token_embedders: {
         bert: {
           type: "pretrained_transformer",
-          model_name: 'bert-base-uncased',
+          model_name: 'bert-large-uncased',
         },
       },
     },
@@ -43,7 +44,7 @@
       token_embedders: {
         bert: {
           type: "pretrained_transformer",
-          model_name: 'bert-base-uncased',
+          model_name: 'bert-large-uncased',
         },
       },
     },
@@ -51,14 +52,14 @@
       type: "rationale_2docs",
       premise_seq2seq_encoder : {
         type: 'lstm',
-        input_size: 768,
+        input_size: 1024,
         hidden_size: 256,
         num_layers: 1,
         bidirectional: true
       },
       query_seq2seq_encoder : {
         type: 'lstm',
-        input_size: 768,
+        input_size: 1024,
         hidden_size: 256,
         num_layers: 1,
         bidirectional: true
@@ -78,14 +79,14 @@
       type: "objective_2docs",
       premise_seq2seq_encoder : {
         type: 'lstm',
-        input_size: 768,
+        input_size: 1024,
         hidden_size: 256,
         num_layers: 1,
         bidirectional: true
       },
       query_seq2seq_encoder : {
         type: 'lstm',
-        input_size: 768,
+        input_size: 1024,
         hidden_size: 256,
         num_layers: 1,
         bidirectional: true
